@@ -1,0 +1,14 @@
+{
+  "name": "macos-window",
+  "version": "1.0.0",
+  "description": "Native module for macOS window management",
+  "main": "index.js",
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "build": "node-gyp rebuild"
+  },
+  "dependencies": {
+    "node-addon-api": "^7.0.0"
+  },
+  "gypfile": true
+} 
