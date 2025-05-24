@@ -132,6 +132,8 @@ if (typeof process !== 'undefined' && process.on) {
     });
 }
 
+let fadeTimeout = null;
+
 function handleEmojiEvent(val) {
     const log = (...args) => {
         const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' ') + '\n';
@@ -160,7 +162,14 @@ function handleEmojiEvent(val) {
     emojiElement.style.left = `${position.x}px`;
     emojiElement.style.top = `${position.y}px`;
     emojiElement.style.opacity = '1';
+    emojiElement.style.transition = 'opacity 1s';
     log('Emoji rendered:', val.emoji, 'at', position);
+    // Clear any previous timeout
+    if (fadeTimeout) clearTimeout(fadeTimeout);
+    // Set timeout to fade out after 10 seconds
+    fadeTimeout = setTimeout(() => {
+        emojiElement.style.opacity = '0';
+    }, 10000);
 }
 
 function listenForEmojiEvents() {
