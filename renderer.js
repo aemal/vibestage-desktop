@@ -4,8 +4,15 @@ if (typeof process !== 'undefined' && process.stdout) {
 console.log('renderer.js loaded');
 
 const { auth, db, rtdb, storage } = require('./firebase-config');
-const { ref, onChildAdded, onChildChanged, set, update, get, onValue } = require('firebase/database');
+const { ref, onChildAdded, onChildChanged, set, update, get, onValue, remove } = require('firebase/database');
 const { collection, addDoc } = require('firebase/firestore');
+
+// On app start, delete all emojiEvents
+remove(ref(rtdb, 'emojiEvents')).then(() => {
+    const msg = 'All emojiEvents deleted on app start\n';
+    console.log(msg);
+    if (typeof process !== 'undefined' && process.stdout) process.stdout.write(msg);
+});
 
 // Minimal test read from emojiEvents
 const testRef = ref(rtdb, 'emojiEvents');
@@ -134,7 +141,24 @@ if (typeof process !== 'undefined' && process.on) {
 
 let fadeTimeout = null;
 
-function handleEmojiEvent(val) {
+// Add floating animation style to the document head if not already present
+if (!document.getElementById('emoji-float-style')) {
+    const style = document.createElement('style');
+    style.id = 'emoji-float-style';
+    style.textContent = `
+    @keyframes emoji-float {
+        0% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-40px) scale(1.08); }
+        100% { transform: translateY(0px) scale(1); }
+    }
+    .emoji-float {
+        animation: emoji-float 3s ease-in-out infinite;
+    }
+    `;
+    document.head.appendChild(style);
+}
+
+function handleEmojiEvent(val, key) {
     const log = (...args) => {
         const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' ') + '\n';
         console.log(...args);
@@ -172,9 +196,10 @@ function handleEmojiEvent(val) {
     emojiElem.style.opacity = '1';
     emojiElem.style.transition = 'opacity 1s';
     emojiElem.style.zIndex = '9999';
+    emojiElem.classList.add('emoji-float');
     emojiContainer.appendChild(emojiElem);
     log('Emoji rendered:', val.emoji, 'at', position);
-    // Fade out after 10 seconds
+    // Fade out after 5 seconds
     setTimeout(() => {
         emojiElem.style.opacity = '0';
         // Remove from DOM after fade out
@@ -182,24 +207,32 @@ function handleEmojiEvent(val) {
             if (emojiElem.parentNode) {
                 emojiElem.parentNode.removeChild(emojiElem);
             }
+            // Remove from database
+            if (key) {
+                remove(ref(rtdb, 'emojiEvents/' + key)).then(() => {
+                    log('Emoji event removed from database:', key);
+                });
+            }
         }, 1000); // match transition duration
-    }, 10000);
+    }, 5000);
 }
 
 function listenForEmojiEvents() {
     const emojiRef = ref(rtdb, 'emojiEvents');
     onChildAdded(emojiRef, (snapshot) => {
         const val = snapshot.val();
+        const key = snapshot.key;
         if (!initialized) {
             initialized = true;
             // Skip initial batch
             return;
         }
-        handleEmojiEvent(val);
+        handleEmojiEvent(val, key);
     });
     onChildChanged(emojiRef, (snapshot) => {
         const val = snapshot.val();
-        handleEmojiEvent(val);
+        const key = snapshot.key;
+        handleEmojiEvent(val, key);
     });
     // Add onValue debug listener
     onValue(emojiRef, (snapshot) => {
