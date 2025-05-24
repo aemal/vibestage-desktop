@@ -159,21 +159,10 @@ if (!document.getElementById('emoji-float-style')) {
 }
 
 function handleEmojiEvent(val, key) {
-    const log = (...args) => {
-        const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' ') + '\n';
-        console.log(...args);
-        if (typeof process !== 'undefined' && process.stdout) {
-            process.stdout.write(msg);
-        }
-    };
     const emojiContainer = document.body;
     if (!emojiContainer) {
-        const msg = 'emojiContainer (body) not found in DOM\n';
-        console.log(msg);
-        if (typeof process !== 'undefined' && process.stdout) process.stdout.write(msg);
         return;
     }
-    log('Emoji event:', val);
     function getRandomPosition() {
         const maxX = window.innerWidth - 120;
         const maxY = window.innerHeight - 120;
@@ -198,7 +187,6 @@ function handleEmojiEvent(val, key) {
     emojiElem.style.zIndex = '9999';
     emojiElem.classList.add('emoji-float');
     emojiContainer.appendChild(emojiElem);
-    log('Emoji rendered:', val.emoji, 'at', position);
     // Fade out after 5 seconds
     setTimeout(() => {
         emojiElem.style.opacity = '0';
@@ -209,9 +197,7 @@ function handleEmojiEvent(val, key) {
             }
             // Remove from database
             if (key) {
-                remove(ref(rtdb, 'emojiEvents/' + key)).then(() => {
-                    log('Emoji event removed from database:', key);
-                });
+                remove(ref(rtdb, 'emojiEvents/' + key));
             }
         }, 1000); // match transition duration
     }, 5000);
@@ -233,13 +219,6 @@ function listenForEmojiEvents() {
         const val = snapshot.val();
         const key = snapshot.key;
         handleEmojiEvent(val, key);
-    });
-    // Add onValue debug listener
-    onValue(emojiRef, (snapshot) => {
-        const data = snapshot.val();
-        const msg = 'onValue data: ' + JSON.stringify(data) + '\n';
-        console.log(msg);
-        if (typeof process !== 'undefined' && process.stdout) process.stdout.write(msg);
     });
 }
 
