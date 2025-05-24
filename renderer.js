@@ -142,8 +142,9 @@ function handleEmojiEvent(val) {
             process.stdout.write(msg);
         }
     };
-    if (!emojiElement) {
-        const msg = 'emojiElement not found in DOM\n';
+    const emojiContainer = document.body;
+    if (!emojiContainer) {
+        const msg = 'emojiContainer (body) not found in DOM\n';
         console.log(msg);
         if (typeof process !== 'undefined' && process.stdout) process.stdout.write(msg);
         return;
@@ -158,17 +159,30 @@ function handleEmojiEvent(val) {
         };
     }
     const position = val.position || getRandomPosition();
-    emojiElement.textContent = val.emoji;
-    emojiElement.style.left = `${position.x}px`;
-    emojiElement.style.top = `${position.y}px`;
-    emojiElement.style.opacity = '1';
-    emojiElement.style.transition = 'opacity 1s';
+    // Create a new emoji element
+    const emojiElem = document.createElement('span');
+    emojiElem.textContent = val.emoji;
+    emojiElem.style.position = 'absolute';
+    emojiElem.style.left = `${position.x}px`;
+    emojiElem.style.top = `${position.y}px`;
+    emojiElem.style.fontSize = '120px';
+    emojiElem.style.fontFamily = `'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif`;
+    emojiElem.style.userSelect = 'none';
+    emojiElem.style.pointerEvents = 'none';
+    emojiElem.style.opacity = '1';
+    emojiElem.style.transition = 'opacity 1s';
+    emojiElem.style.zIndex = '9999';
+    emojiContainer.appendChild(emojiElem);
     log('Emoji rendered:', val.emoji, 'at', position);
-    // Clear any previous timeout
-    if (fadeTimeout) clearTimeout(fadeTimeout);
-    // Set timeout to fade out after 10 seconds
-    fadeTimeout = setTimeout(() => {
-        emojiElement.style.opacity = '0';
+    // Fade out after 10 seconds
+    setTimeout(() => {
+        emojiElem.style.opacity = '0';
+        // Remove from DOM after fade out
+        setTimeout(() => {
+            if (emojiElem.parentNode) {
+                emojiElem.parentNode.removeChild(emojiElem);
+            }
+        }, 1000); // match transition duration
     }, 10000);
 }
 
