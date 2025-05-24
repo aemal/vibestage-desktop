@@ -1,4 +1,26 @@
 const { app, BrowserWindow, screen } = require('electron');
+const { initializeApp } = require('firebase/app');
+const { getAuth } = require('firebase/auth');
+const { getFirestore } = require('firebase/firestore');
+const { getDatabase } = require('firebase/database');
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDZvlz3uUec58kSZp9BajzkjzJBsh8b4Es",
+  authDomain: "vibestage-d76c5.firebaseapp.com",
+  databaseURL: "https://vibestage-d76c5-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "vibestage-d76c5",
+  storageBucket: "vibestage-d76c5.firebasestorage.app",
+  messagingSenderId: "749848512177",
+  appId: "1:749848512177:web:1ea2df06bdeb1456a04490",
+  measurementId: "G-K6S4E7036J"
+};
+
+// Initialize Firebase in the main process
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+const rtdb = getDatabase(firebaseApp);
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
