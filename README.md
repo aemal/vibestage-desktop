@@ -13,13 +13,6 @@ This project is an Electron-based desktop application that creates a transparent
 
 *Auto-playing demo: See the transparent overlay with emoji animations and confetti effects*
 
-**Or watch the full video:**
-
-<video width="800" controls>
-  <source src="assets/stage.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-
 ### Mobile Remote Control
 ![Remote Control Interface](assets/remote.jpeg)
 
