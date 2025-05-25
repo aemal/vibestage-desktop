@@ -200,28 +200,29 @@ try {
         if (isPartyEmoji) {
             console.log('🎉 emoji detected! Firing canvas-confetti...');
             
-            // Generate random positions for confetti bursts
-            const randomX1 = Math.random(); // 0 to 1 across screen width
-            const randomY1 = Math.random() * 0.5 + 0.3; // Between 30% and 80% down the screen
-            const randomX2 = Math.random();
-            const randomY2 = Math.random() * 0.5 + 0.3;
+            // Helper function for random ranges
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
             
-            console.log('About to call first confetti burst at:', randomX1, randomY1);
+            console.log('About to call first confetti burst');
             confetti({
-                particleCount: 150,
-                spread: 100,
-                origin: { x: randomX1, y: randomY1 },
+                angle: randomInRange(55, 125),
+                spread: randomInRange(50, 70),
+                particleCount: randomInRange(50, 100),
+                origin: { y: 0.6 },
                 colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
             });
             console.log('First confetti burst called');
             
-            // Second burst after a short delay from different position
+            // Second burst after a short delay with different random parameters
             setTimeout(() => {
-                console.log('About to call second confetti burst at:', randomX2, randomY2);
+                console.log('About to call second confetti burst');
                 confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: { x: randomX2, y: randomY2 },
+                    angle: randomInRange(55, 125),
+                    spread: randomInRange(50, 70),
+                    particleCount: randomInRange(50, 100),
+                    origin: { y: 0.6 },
                     colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
                 });
                 console.log('Second confetti burst called');
