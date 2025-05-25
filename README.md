@@ -6,6 +6,25 @@ This project is an Electron-based desktop application that creates a transparent
 
 **Purpose**: VibeStage is an audience engagement tool designed for presentations and workshops. The presenter runs the overlay on their screen while the audience gets access to the remote control, allowing them to share their vibes and reactions in real-time. This creates an interactive and engaging experience where the audience can express their emotions, feedback, and energy through emojis and special effects that appear on the presenter's screen.
 
+## Demo
+
+### Desktop Overlay in Action
+![VibeStage Demo](assets/stage.gif)
+
+*Auto-playing demo: See the transparent overlay with emoji animations and confetti effects*
+
+**Or watch the full video:**
+
+<video width="800" controls>
+  <source src="assets/stage.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+### Mobile Remote Control
+![Remote Control Interface](assets/remote.jpeg)
+
+*The mobile interface at [vibestage.aemalsayer.com](https://vibestage.aemalsayer.com/) for controlling the overlay*
+
 ## Remote Control
 
 🎮 **Control your overlay remotely!** Open [https://vibestage.aemalsayer.com/](https://vibestage.aemalsayer.com/) on your phone, run this project on your laptop, and enjoy controlling the emoji animations from your mobile device!
