@@ -194,7 +194,14 @@ try {
                             val.emoji.charCodeAt(0) === 127881 ||
                             val.emoji === '\uD83C\uDF89';
         
+        // Try multiple ways to detect star emoji
+        const isStarEmoji = val.emoji === '🌟' || 
+                           val.emoji.includes('🌟') || 
+                           val.emoji.charCodeAt(0) === 127775 ||
+                           val.emoji === '\uD83C\uDF1F';
+        
         console.log('Is party emoji?', isPartyEmoji);
+        console.log('Is star emoji?', isStarEmoji);
         
         // If it's a party emoji, don't render the emoji - just show confetti
         if (isPartyEmoji) {
@@ -228,6 +235,45 @@ try {
                 console.log('Second confetti burst called');
             }, 150);
             console.log('Canvas-confetti setup complete');
+            
+            // Don't render the emoji element - just return after confetti
+            return;
+        }
+        
+        // If it's a star emoji, show star confetti effect
+        if (isStarEmoji) {
+            console.log('🌟 emoji detected! Firing star confetti...');
+            
+            var defaults = {
+                spread: 360,
+                ticks: 50,
+                gravity: 0,
+                decay: 0.94,
+                startVelocity: 30,
+                colors: ['FFE400', 'FFBD00', 'E89400', 'FFCA6C', 'FDFFB8']
+            };
+
+            function shoot() {
+                confetti({
+                    ...defaults,
+                    particleCount: 40,
+                    scalar: 1.2,
+                    shapes: ['star']
+                });
+
+                confetti({
+                    ...defaults,
+                    particleCount: 10,
+                    scalar: 0.75,
+                    shapes: ['circle']
+                });
+            }
+
+            setTimeout(shoot, 0);
+            setTimeout(shoot, 100);
+            setTimeout(shoot, 200);
+            
+            console.log('Star confetti setup complete');
             
             // Don't render the emoji element - just return after confetti
             return;
