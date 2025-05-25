@@ -199,22 +199,29 @@ try {
         // If it's a party emoji, don't render the emoji - just show confetti
         if (isPartyEmoji) {
             console.log('🎉 emoji detected! Firing canvas-confetti...');
-            console.log('About to call first confetti burst');
+            
+            // Generate random positions for confetti bursts
+            const randomX1 = Math.random(); // 0 to 1 across screen width
+            const randomY1 = Math.random() * 0.5 + 0.3; // Between 30% and 80% down the screen
+            const randomX2 = Math.random();
+            const randomY2 = Math.random() * 0.5 + 0.3;
+            
+            console.log('About to call first confetti burst at:', randomX1, randomY1);
             confetti({
                 particleCount: 150,
                 spread: 100,
-                origin: { y: 0.7 },
+                origin: { x: randomX1, y: randomY1 },
                 colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
             });
             console.log('First confetti burst called');
             
-            // Second burst after a short delay
+            // Second burst after a short delay from different position
             setTimeout(() => {
-                console.log('About to call second confetti burst');
+                console.log('About to call second confetti burst at:', randomX2, randomY2);
                 confetti({
                     particleCount: 100,
                     spread: 70,
-                    origin: { y: 0.6 },
+                    origin: { x: randomX2, y: randomY2 },
                     colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
                 });
                 console.log('Second confetti burst called');
