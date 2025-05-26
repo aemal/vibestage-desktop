@@ -14,7 +14,7 @@ This project is an Electron-based desktop application that creates a transparent
 *Auto-playing demo: See the transparent overlay with emoji animations and confetti effects*
 
 ### Mobile Remote Control
-![Remote Control Interface](assets/remote.jpeg)
+<img src="assets/remote.jpeg" alt="Remote Control Interface" height="400">
 
 *The mobile interface at [vibestage.aemalsayer.com](https://vibestage.aemalsayer.com/) for controlling the overlay*
 
