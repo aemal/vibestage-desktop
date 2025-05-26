@@ -323,19 +323,33 @@ try {
     function listenForEmojiEvents() {
         console.log('Setting up Firebase listeners...');
         const emojiRef = ref(rtdb, 'emojiEvents');
+        
+        // First, check if there are existing emojis and mark as initialized
+        get(emojiRef).then(snapshot => {
+            if (snapshot.exists()) {
+                initialized = true;
+                console.log('Found existing emojis, marked as initialized');
+            } else {
+                console.log('No existing emojis, ready to show new ones');
+            }
+        });
+        
         onChildAdded(emojiRef, (snapshot) => {
             console.log('onChildAdded triggered');
             const val = snapshot.val();
             const key = snapshot.key;
             console.log('Child added - val:', val, 'key:', key, 'initialized:', initialized);
+            
+            // Only skip if we found existing emojis during initialization
             if (!initialized) {
                 initialized = true;
-                console.log('Skipping initial batch, setting initialized to true');
-                // Skip initial batch
-                return;
+                console.log('First emoji received, setting initialized to true');
             }
+            
+            // Always handle the emoji event
             handleEmojiEvent(val, key);
         });
+        
         onChildChanged(emojiRef, (snapshot) => {
             console.log('onChildChanged triggered');
             const val = snapshot.val();
