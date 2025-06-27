@@ -423,6 +423,115 @@ try {
 
     // Questions functionality
     let questionsData = [];
+    let draggedElement = null;
+
+    // Drag and drop functionality
+    function handleDragStart(e) {
+        draggedElement = e.target;
+        e.target.style.opacity = '0.5';
+        e.target.style.transform = 'rotate(2deg)';
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', e.target.outerHTML);
+        console.log('🔄 Started dragging question:', e.target.dataset.questionId);
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDragEnter(e) {
+        if (e.target !== draggedElement) {
+            e.target.style.borderTop = '3px solid #007bff';
+        }
+    }
+
+    function handleDragLeave(e) {
+        e.target.style.borderTop = '';
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.target.style.borderTop = '';
+        
+        if (e.target !== draggedElement && e.target.draggable) {
+            const questionsList = e.target.parentNode;
+            const allQuestions = [...questionsList.children];
+            const draggedIndex = allQuestions.indexOf(draggedElement);
+            const targetIndex = allQuestions.indexOf(e.target);
+            
+            if (draggedIndex < targetIndex) {
+                questionsList.insertBefore(draggedElement, e.target.nextSibling);
+            } else {
+                questionsList.insertBefore(draggedElement, e.target);
+            }
+            
+            // Save new order to localStorage
+            saveQuestionOrder(questionsList);
+            console.log('✅ Question order updated and saved');
+        }
+    }
+
+    function handleDragEnd(e) {
+        e.target.style.opacity = '';
+        e.target.style.transform = '';
+        // Clear any remaining border styles
+        const questionsList = e.target.parentNode;
+        [...questionsList.children].forEach(item => {
+            item.style.borderTop = '';
+        });
+    }
+
+    // localStorage functions for question order
+    function saveQuestionOrder(questionsList) {
+        const order = [...questionsList.children].map((item, index) => ({
+            id: item.dataset.questionId,
+            index: index
+        }));
+        localStorage.setItem('vibestage-question-order', JSON.stringify(order));
+        console.log('💾 Saved question order:', order);
+    }
+
+    function getSavedQuestionOrder() {
+        try {
+            const saved = localStorage.getItem('vibestage-question-order');
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error('Error loading saved question order:', error);
+            return [];
+        }
+    }
+
+    function reorderQuestionsByIndex(questions, savedOrder) {
+        if (!savedOrder || savedOrder.length === 0) {
+            return questions;
+        }
+        
+        // Create a map of question IDs to questions for quick lookup
+        const questionMap = new Map(questions.map(q => [q.id, q]));
+        
+        // Create ordered array based on saved order
+        const orderedQuestions = [];
+        const usedIds = new Set();
+        
+        // First, add questions in saved order
+        savedOrder.forEach(orderItem => {
+            const question = questionMap.get(orderItem.id);
+            if (question) {
+                orderedQuestions.push(question);
+                usedIds.add(orderItem.id);
+            }
+        });
+        
+        // Then add any new questions that weren't in the saved order
+        questions.forEach(question => {
+            if (!usedIds.has(question.id)) {
+                orderedQuestions.push(question);
+            }
+        });
+        
+        return orderedQuestions;
+    }
 
     function handleNewQuestion(questionData) {
         console.log('🔥 handleNewQuestion called with:', questionData);
@@ -657,8 +766,15 @@ try {
             `;
             questionsList.appendChild(noQuestions);
         } else {
-            questionsData.forEach((question, index) => {
+            // Load saved order from localStorage
+            const savedOrder = getSavedQuestionOrder();
+            const orderedQuestions = reorderQuestionsByIndex(questionsData, savedOrder);
+            
+            orderedQuestions.forEach((question, index) => {
                 const questionItem = document.createElement('div');
+                questionItem.draggable = true;
+                questionItem.dataset.questionId = question.id;
+                questionItem.dataset.originalIndex = index;
                 questionItem.style.cssText = `
                     border: 1px solid #e0e0e0;
                     border-radius: 8px;
@@ -669,11 +785,37 @@ try {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    cursor: move;
+                    transition: all 0.2s ease;
                 `;
+                
+                // Add drag handle visual indicator
+                const dragHandle = document.createElement('div');
+                dragHandle.innerHTML = ':::';
+                dragHandle.style.cssText = `
+                    color: #999;
+                    font-size: 14px;
+                    margin-right: 12px;
+                    cursor: grab;
+                    user-select: none;
+                    line-height: 1;
+                    font-weight: bold;
+                    letter-spacing: 1px;
+                `;
+                
+                // Drag event listeners
+                questionItem.addEventListener('dragstart', handleDragStart);
+                questionItem.addEventListener('dragover', handleDragOver);
+                questionItem.addEventListener('drop', handleDrop);
+                questionItem.addEventListener('dragenter', handleDragEnter);
+                questionItem.addEventListener('dragleave', handleDragLeave);
+                questionItem.addEventListener('dragend', handleDragEnd);
 
                 const questionContent = document.createElement('div');
                 questionContent.style.cssText = `
                     flex: 1;
+                    display: flex;
+                    align-items: center;
                 `;
 
                 const questionText = document.createElement('div');
@@ -682,6 +824,7 @@ try {
                     font-size: 16px;
                     line-height: 1.5;
                     color: #333;
+                    flex: 1;
                 `;
 
                 const deleteBtn = document.createElement('button');
@@ -809,6 +952,7 @@ try {
                     }
                 });
 
+                questionContent.appendChild(dragHandle);
                 questionContent.appendChild(questionText);
                 questionItem.appendChild(questionContent);
                 questionItem.appendChild(deleteBtn);
@@ -970,9 +1114,7 @@ try {
         console.log('🔍 Found', deleteButtons.length, 'delete buttons');
         
         deleteButtons.forEach((btn, index) => {
-            console.log(`Button ${index}:`, btn.textContent, 'Style:', btn.style.background);
-            btn.style.border = '3px solid yellow'; // Highlight buttons for testing
-            
+            console.log(`Button ${index}:`, btn.textContent, 'Style:', btn.style.background);            
             // Add a direct click test
             btn.addEventListener('click', () => {
                 console.log(`🧪 TEST: Button ${index} was clicked!`);
@@ -980,7 +1122,7 @@ try {
         });
         
         if (deleteButtons.length > 0) {
-            console.log('🧪 Try hovering and clicking the yellow-highlighted DELETE buttons');
+            console.log('🧪 Try clicking the DELETE buttons - they should work properly');
             console.log('🧪 Or call testDeleteFirst() to delete the first question directly');
         }
     };
@@ -1178,41 +1320,7 @@ try {
         }
     };
 
-    // Simple test to check button functionality
-    window.testDeleteButtons = function() {
-        console.log('🧪 Testing delete button functionality...');
-        const modal = document.getElementById('questions-modal');
-        if (!modal) {
-            console.log('❌ Modal not open. Press Cmd+Shift+E first to open the questions modal.');
-            return;
-        }
-        
-        const deleteButtons = modal.querySelectorAll('button');
-        const realDeleteButtons = Array.from(deleteButtons).filter(btn => 
-            btn.innerHTML.includes('DELETE') && !btn.innerHTML.includes('✕')
-        );
-        
-        console.log(`🔍 Found ${realDeleteButtons.length} delete buttons`);
-        
-        realDeleteButtons.forEach((btn, index) => {
-            console.log(`  Button ${index + 1}: "${btn.innerHTML}" - Enabled: ${!btn.disabled}`);
-            
-            // Add a test border to make buttons visible
-            btn.style.border = '3px solid yellow';
-            
-            // Test if click events are working by adding a temporary listener
-            const testClick = () => {
-                console.log(`🟢 Button ${index + 1} was clicked! The delete functionality should work.`);
-            };
-            btn.addEventListener('click', testClick, { once: true });
-        });
-        
-        if (realDeleteButtons.length > 0) {
-            console.log('💡 Try clicking the yellow-bordered DELETE buttons now. You should see click confirmations in the console.');
-        } else {
-            console.log('❌ No delete buttons found. Make sure there are questions to delete.');
-        }
-    };
+
 
     console.log('Questions feature setup complete! Use addTestQuestion("Your question here?") in console to test.');
     console.log('Press Cmd+Shift+E (global shortcut) to show all questions.');
@@ -1223,9 +1331,45 @@ try {
         console.log('- App startup complete:', appStartupComplete);
         console.log('- Loaded question IDs:', Array.from(loadedQuestionIds));
         console.log('- Currently deleting IDs:', Array.from(deletingQuestionIds));
+        console.log('- Saved question order:', getSavedQuestionOrder());
         questionsData.forEach((q, i) => {
             console.log(`  Question ${i}:`, q.id, q.text || q.question);
         });
+    };
+
+    // Debug function to clear saved question order
+    window.clearQuestionOrder = function() {
+        localStorage.removeItem('vibestage-question-order');
+        console.log('🧹 Cleared saved question order from localStorage');
+        console.log('💡 Refresh the modal to see questions in default order');
+    };
+
+    // Debug function to show current saved order
+    window.showSavedOrder = function() {
+        const saved = getSavedQuestionOrder();
+        console.log('💾 Current saved question order:', saved);
+        return saved;
+    };
+
+    // Function to clean up any test borders that might be visible
+    window.cleanupTestBorders = function() {
+        const modal = document.getElementById('questions-modal');
+        if (modal) {
+            const allButtons = modal.querySelectorAll('button');
+            allButtons.forEach(btn => {
+                btn.style.border = '';
+            });
+            console.log('🧹 Cleaned up all test borders from modal buttons');
+        }
+        
+        // Also clean up any other elements that might have test borders
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(el => {
+            if (el.style.border && el.style.border.includes('yellow')) {
+                el.style.border = '';
+            }
+        });
+        console.log('✅ All yellow test borders removed');
     };
 
     console.log('Available debug commands:');
@@ -1237,6 +1381,9 @@ try {
     console.log('- testClickThrough() - Test if clicks pass through emojis');
     console.log('- forceClickThrough() - Force enable click-through if blocked');
     console.log('- emergencyDeleteAll() - Delete all questions bypassing UI');
+    console.log('- showSavedOrder() - Show current saved question order');
+    console.log('- clearQuestionOrder() - Clear saved question order');
+    console.log('- cleanupTestBorders() - Remove any yellow test borders');
     console.log('- location.reload() - Force refresh if you see cached content');
     console.log('');
     console.log('🔧 CLICK-THROUGH ISSUE FIXED:');
@@ -1247,8 +1394,10 @@ try {
     console.log('1. Press Cmd+Shift+E to open questions modal');
     console.log('2. Title should show just "Questions" (not "? Questions")');
     console.log('3. DELETE buttons should work properly');
-    console.log('4. Run testConfetti() to test 🎉 confetti');
-    console.log('5. Run testClickThrough() to test mouse click-through');
+    console.log('4. Questions are now DRAGGABLE - drag the ⋮⋮ handle to reorder');
+    console.log('5. Question order is automatically saved to localStorage');
+    console.log('6. Run testConfetti() to test 🎉 confetti');
+    console.log('7. Run testClickThrough() to test mouse click-through');
 
     // Remove the old random emoji logic
     // function getRandomPosition() { ... }
