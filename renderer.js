@@ -852,14 +852,6 @@ try {
             modal.focus();
             console.log('Modal focused and ready for interaction');
         }, 100);
-
-        // Keep mouse events enabled while modal is open
-        const keepMouseEventsEnabled = setInterval(() => {
-            ipcRenderer.send('enable-mouse-events');
-        }, 500); // Re-enable every 500ms
-
-        // Store the interval ID so we can clear it when modal closes
-        modal.setAttribute('data-mouse-interval', keepMouseEventsEnabled);
     }
 
     // IPC handler for global shortcuts
@@ -881,13 +873,6 @@ try {
     function closeQuestionsModal() {
         const modal = document.getElementById('questions-modal');
         if (modal) {
-            // Clear the mouse events interval
-            const intervalId = modal.getAttribute('data-mouse-interval');
-            if (intervalId) {
-                clearInterval(parseInt(intervalId));
-                console.log('Cleared mouse events interval');
-            }
-            
             // Remove the modal from DOM instead of just hiding it
             modal.remove();
             console.log('Modal closed and removed');
