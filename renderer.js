@@ -324,23 +324,30 @@ try {
             return;
         }
 
-        // Check if it's a question mark emoji (simple ASCII detection)
+        // Check if it's a question emoji (waving hand)
         const emojiStr = String(val.emoji);
-        const isQuestionEmoji = emojiStr === '?' || 
-                               emojiStr.includes('?');
+        const isQuestionEmoji = emojiStr.includes('👋') || emojiStr.includes('🙋');
         
         if (isQuestionEmoji) {
-            console.log('? emoji detected! Adding question mark bounce effect...');
-            // Question marks will be rendered with special bounce animation
+            console.log('❓ Question emoji detected! Adding question bounce effect...');
+            // Question emojis will be rendered with special bounce animation
         }
         
         // Only render emoji element for non-party/star emojis
-        const emojiElem = document.createElement('span');
+        const emojiElem = document.createElement('div');
         emojiElem.style.position = 'absolute';
         emojiElem.style.left = `${position.x}px`;
         emojiElem.style.top = `${position.y}px`;
         emojiElem.style.fontSize = '120px';
-        emojiElem.style.fontFamily = `'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif`;
+        emojiElem.style.fontFamily = `"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+        emojiElem.style.lineHeight = '1';
+        emojiElem.style.display = 'block';
+        emojiElem.style.width = 'auto';
+        emojiElem.style.height = 'auto';
+        emojiElem.style.color = 'initial'; // Reset any color inheritance
+        emojiElem.style.webkitFontFeatureSettings = '"liga", "kern"';
+        emojiElem.style.fontFeatureSettings = '"liga", "kern"';
+        emojiElem.style.textRendering = 'optimizeQuality';
         emojiElem.style.userSelect = 'none';
         emojiElem.style.pointerEvents = 'none'; // Allow clicks to pass through
         emojiElem.style.opacity = '1';
@@ -354,7 +361,14 @@ try {
             emojiElem.classList.add('emoji-float');
         }
         
-        emojiElem.textContent = val.emoji;
+        // Try using innerHTML with HTML entity to force color rendering
+        if (val.emoji === '👋') {
+            emojiElem.innerHTML = '&#x1F44B;'; // HTML entity for waving hand emoji
+        } else if (val.emoji === '🙋') {
+            emojiElem.innerHTML = '&#x1F64B;'; // HTML entity for raising hand emoji
+        } else {
+            emojiElem.textContent = val.emoji;
+        }
         emojiContainer.appendChild(emojiElem);
         
         console.log('Emoji element created and added:', val.emoji);
@@ -544,11 +558,14 @@ try {
         
         console.log('✅ Valid question data, proceeding with emoji...');
         
-        // Add question mark emoji to the existing emoji events system
+        // Add hand-raising emoji for new questions
+        // Try different emoji options to find one that renders in color
+        const randomEmoji = '👋'; // Try waving hand which might render better
+        
         const timestamp = Date.now();
         const emojiEventRef = ref(rtdb, 'emojiEvents/' + timestamp);
         const emojiData = {
-            emoji: '?',
+            emoji: randomEmoji,
             position: null, // Will use random position
             timestamp: timestamp,
             source: 'question',
@@ -557,11 +574,12 @@ try {
         };
         
         console.log('🎯 Adding emoji event to Firebase:', emojiData);
+        console.log('🎯 Question emoji selected:', randomEmoji);
         
         set(emojiEventRef, emojiData).then(() => {
-            console.log('✅ Question mark emoji added to Firebase events successfully!');
+            console.log('✅ Question emoji added to Firebase events successfully!');
         }).catch(error => {
-            console.error('❌ Error adding question mark emoji to Firebase:', error);
+            console.error('❌ Error adding question emoji to Firebase:', error);
             console.error('Error details:', error.code, error.message);
         });
 
@@ -1372,6 +1390,34 @@ try {
         console.log('✅ All yellow test borders removed');
     };
 
+    // Test function for question emojis
+    window.testQuestionEmoji = function() {
+        console.log('🧪 Testing question emoji...');
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                const questionEmoji = '👋';
+                console.log(`Test ${i + 1}: Selected emoji:`, questionEmoji);
+                
+                // Simulate adding to Firebase
+                const timestamp = Date.now() + i;
+                const emojiEventRef = ref(rtdb, 'emojiEvents/' + timestamp);
+                const emojiData = {
+                    emoji: questionEmoji,
+                    position: null,
+                    timestamp: timestamp,
+                    source: 'test'
+                };
+                
+                set(emojiEventRef, emojiData).then(() => {
+                    console.log(`✅ Test emoji ${i + 1} added successfully:`, questionEmoji);
+                }).catch(error => {
+                    console.error(`❌ Test emoji ${i + 1} failed:`, error);
+                });
+            }, i * 1000); // 1 second delay between each test
+        }
+        console.log('🎲 Will show 3 question emojis over 3 seconds...');
+    };
+
     console.log('Available debug commands:');
     console.log('- debugState() - Check current app state');
     console.log('- debugFirestore() - Check Firestore connection');
@@ -1384,6 +1430,7 @@ try {
     console.log('- showSavedOrder() - Show current saved question order');
     console.log('- clearQuestionOrder() - Clear saved question order');
     console.log('- cleanupTestBorders() - Remove any yellow test borders');
+    console.log('- testQuestionEmoji() - Test question emojis');
     console.log('- location.reload() - Force refresh if you see cached content');
     console.log('');
     console.log('🔧 CLICK-THROUGH ISSUE FIXED:');
@@ -1394,10 +1441,11 @@ try {
     console.log('1. Press Cmd+Shift+E to open questions modal');
     console.log('2. Title should show just "Questions" (not "? Questions")');
     console.log('3. DELETE buttons should work properly');
-    console.log('4. Questions are now DRAGGABLE - drag the ⋮⋮ handle to reorder');
+    console.log('4. Questions are now DRAGGABLE - drag the ::: handle to reorder');
     console.log('5. Question order is automatically saved to localStorage');
-    console.log('6. Run testConfetti() to test 🎉 confetti');
-    console.log('7. Run testClickThrough() to test mouse click-through');
+    console.log('6. New questions show 👋 question emoji with bounce animation');
+    console.log('7. Run testConfetti() to test 🎉 confetti');
+    console.log('8. Run testClickThrough() to test mouse click-through');
 
     // Remove the old random emoji logic
     // function getRandomPosition() { ... }

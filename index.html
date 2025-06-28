@@ -14,9 +14,22 @@
         #emoji {
             position: absolute;
             font-size: 120px;
-            font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
             user-select: none;
             pointer-events: none;
+            line-height: 1;
+            display: block;
+        }
+        
+        /* Global emoji styling to ensure color emoji rendering */
+        body {
+            font-feature-settings: "liga", "kern";
+        }
+        
+        /* Force color emoji for all emoji elements */
+        span[style*="Apple Color Emoji"], div[style*="Apple Color Emoji"] {
+            font-feature-settings: "liga", "kern";
+            text-rendering: optimizeQuality;
         }
     </style>
 </head>
