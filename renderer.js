@@ -1,4 +1,15 @@
 try {
+    const fs = require('fs');
+    const path = require('path');
+    let config = { showEmojis: true };
+    try {
+        const configPath = path.join(__dirname, 'config.json');
+        if (fs.existsSync(configPath)) {
+            config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        }
+    } catch (error) {
+        console.error('Error reading config.json:', error);
+    }
     console.log('=== RENDERER.JS STARTING ===');
     if (typeof process !== 'undefined' && process.stdout) {
         process.stdout.write('renderer.js loaded\n');
@@ -8,6 +19,7 @@ try {
     const { ipcRenderer } = require('electron');
     
     const { auth, db, rtdb, storage } = require('./firebase-config');
+
     console.log('Firebase config loaded');
     
     const { ref, onChildAdded, onChildChanged, set, update, get, onValue, remove } = require('firebase/database');
@@ -179,6 +191,12 @@ try {
     }
 
     function handleEmojiEvent(val, key) {
+        if (!config.showEmojis && val.source !== 'question') {
+            if (key) {
+                remove(ref(rtdb, 'emojiEvents/' + key));
+            }
+            return;
+        }
         console.log('=== handleEmojiEvent called ===');
         console.log('val:', val);
         console.log('key:', key);
