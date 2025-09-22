@@ -17,6 +17,9 @@
             min-height: 100vh;
             padding: 15px;
             color: #333;
+            display: flex;              /* center horizontally */
+            justify-content: center;    /* center container */
+            align-items: flex-start;    /* keep content starting from top */
         }
 
         .container {
@@ -67,25 +70,7 @@
             gap: 8px;
         }
 
-        .connection-status {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-            z-index: 1000;
-        }
-
-        .connected { background: #28a745; color: white; }
-        .disconnected { background: #dc3545; color: white; animation: pulse 2s infinite; }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
+        
 
         /* Workshop Speed Styles */
         .speed-options {
@@ -342,9 +327,7 @@
     </style>
 </head>
 <body>
-    <div class="connection-status" id="connectionStatus">
-        <span id="statusText">Connecting...</span>
-    </div>
+    
 
     <div class="container">
         <div class="header">
@@ -555,18 +538,7 @@
         }
 
         // Update connection status
-        function updateConnectionStatus(connected) {
-            const status = document.getElementById('connectionStatus');
-            const text = document.getElementById('statusText');
-
-            if (connected) {
-                status.className = 'connection-status connected';
-                text.textContent = 'Connected';
-            } else {
-                status.className = 'connection-status disconnected';
-                text.textContent = 'Disconnected';
-            }
-        }
+        function updateConnectionStatus(connected) { /* badge removed */ }
 
         // Send emoji to Firebase
         async function sendEmoji(emoji, source = 'remote') {
@@ -796,10 +768,7 @@
         // Initialize Firebase
         async function initializeFirebase() {
             try {
-                const connectedRef = ref(database, '.info/connected');
-                onValue(connectedRef, (snapshot) => {
-                    updateConnectionStatus(snapshot.val());
-                });
+                // connection badge removed; keep logic no-op
 
                 const speedFeedbackRef = ref(database, 'workshopSpeed');
                 onValue(speedFeedbackRef, (snapshot) => {
