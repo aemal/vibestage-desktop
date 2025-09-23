@@ -410,11 +410,7 @@
             <p style="margin-bottom: 15px; color: #666; font-size: 0.9em;">Have a question? Ask Aemal directly!</p>
             <div class="question-form">
                 <div class="form-group">
-                    <label class="form-label">Your Name (Optional)</label>
-                    <input type="text" class="form-input" id="questionName" placeholder="Enter your name">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Your Question *</label>
+                    <label class="form-label">Your Question</label>
                     <textarea class="form-textarea" id="questionText" placeholder="Type your question here..." required></textarea>
                 </div>
                 <button class="submit-btn" id="submitQuestion">Submit Question</button>
@@ -632,7 +628,6 @@
 
         // Handle question submission
         async function handleQuestionSubmit() {
-            const nameInput = document.getElementById('questionName');
             const textInput = document.getElementById('questionText');
             const submitBtn = document.getElementById('submitQuestion');
             const statusDiv = document.getElementById('questionStatus');
@@ -649,14 +644,13 @@
             try {
                 await addDoc(collection(firestore, 'questions'), {
                     text: questionText,
-                    name: nameInput.value.trim() || 'Anonymous',
+                    name: 'Anonymous',
                     timestamp: serverTimestamp(),
                     source: 'remote-controller',
                     userId: userId
                 });
 
                 showStatus(statusDiv, 'Question submitted successfully!', 'success');
-                nameInput.value = '';
                 textInput.value = '';
             } catch (error) {
                 console.error('Error submitting question:', error);
