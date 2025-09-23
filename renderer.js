@@ -429,27 +429,6 @@ try {
         // Only render emoji element for non-party/star emojis
         console.log('🎭 CREATING EMOJI ELEMENT FOR:', val.emoji, 'KEY:', key);
 
-        // Add visual debug indicator for emoji creation
-        const createDiv = document.createElement('div');
-        createDiv.style.cssText = `
-            position: fixed;
-            top: 100px;
-            left: 10px;
-            background: orange;
-            color: white;
-            padding: 5px;
-            z-index: 9999;
-            font-size: 12px;
-        `;
-        createDiv.textContent = `CREATING EMOJI: ${val.emoji} - ${key}`;
-        document.body.appendChild(createDiv);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-            if (createDiv.parentNode) {
-                createDiv.remove();
-            }
-        }, 3000);
 
         const emojiElem = document.createElement('div');
         emojiElem.style.position = 'absolute';
@@ -491,27 +470,6 @@ try {
         }
         emojiContainer.appendChild(emojiElem);
 
-        // Add visual debug indicator for DOM addition
-        const domDiv = document.createElement('div');
-        domDiv.style.cssText = `
-            position: fixed;
-            top: 130px;
-            left: 10px;
-            background: purple;
-            color: white;
-            padding: 5px;
-            z-index: 9999;
-            font-size: 12px;
-        `;
-        domDiv.textContent = `ADDED TO DOM: ${val.emoji} - ${key}`;
-        document.body.appendChild(domDiv);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-            if (domDiv.parentNode) {
-                domDiv.remove();
-            }
-        }, 3000);
 
         console.log('Emoji element created and added:', val.emoji);
         
@@ -551,20 +509,6 @@ try {
         }
 
         console.log('🔥 Setting up Firebase listeners...');
-        // Add visual indicator for Firebase setup
-        const firebaseDiv = document.createElement('div');
-        firebaseDiv.style.cssText = `
-            position: fixed;
-            top: 40px;
-            left: 10px;
-            background: blue;
-            color: white;
-            padding: 5px;
-            z-index: 9999;
-            font-size: 12px;
-        `;
-        firebaseDiv.textContent = 'FIREBASE LISTENERS SETUP - ' + Date.now();
-        document.body.appendChild(firebaseDiv);
 
         emojiListenerActive = true;
         const emojiRef = ref(rtdb, 'emojiEvents');
@@ -586,29 +530,8 @@ try {
 
         const unsubscribeAdded = onChildAdded(emojiRef, (snapshot) => {
             console.log('🔥 onChildAdded triggered');
-            // Add visual indicator for emoji events
-            const emojiEventDiv = document.createElement('div');
-            emojiEventDiv.style.cssText = `
-                position: fixed;
-                top: 70px;
-                left: 10px;
-                background: green;
-                color: white;
-                padding: 5px;
-                z-index: 9999;
-                font-size: 12px;
-            `;
             const val = snapshot.val();
             const key = snapshot.key;
-            emojiEventDiv.textContent = `EMOJI EVENT: ${val.emoji} - ${key}`;
-            document.body.appendChild(emojiEventDiv);
-
-            // Remove after 3 seconds
-            setTimeout(() => {
-                if (emojiEventDiv.parentNode) {
-                    emojiEventDiv.remove();
-                }
-            }, 3000);
 
             console.log('🔥 Child added - val:', val, 'key:', key, 'initialized:', initialized);
             console.log('🔥 Processed keys so far:', Array.from(processedEmojiKeys));
