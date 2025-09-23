@@ -22,7 +22,30 @@ const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 const rtdb = getDatabase(firebaseApp);
 
-let mainWindow; // Store reference to the main window
+let mainWindow;
+let adminWindow;
+
+function createAdminWindow() {
+    if (adminWindow) {
+        adminWindow.focus();
+        return;
+    }
+
+    adminWindow = new BrowserWindow({
+        width: 400,
+        height: 500,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
+
+    adminWindow.loadFile('admin.html');
+
+    adminWindow.on('closed', () => {
+        adminWindow = null;
+    });
+}
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -124,6 +147,18 @@ function createWindow() {
       }
     });
 
+    const emojiModeShortcut = globalShortcut.register('CommandOrControl+Shift+M', () => {
+        console.log('🔥 Global shortcut triggered: Cmd+Shift+M');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('toggle-emoji-mode');
+        }
+    });
+
+    const adminPanelShortcut = globalShortcut.register('CommandOrControl+Shift+A', () => {
+        console.log('🔥 Global shortcut triggered: Cmd+Shift+A');
+        createAdminWindow();
+    });
+
     // Don't register global escape - handle it in the modal instead
     // const escapeShortcut = globalShortcut.register('Escape', () => {
     //   console.log('🔥 Escape key triggered');
@@ -144,6 +179,18 @@ function createWindow() {
       console.log('Questions shortcut registration failed');
     } else {
       console.log('Questions shortcut registered successfully');
+    }
+
+    if (!emojiModeShortcut) {
+        console.log('Emoji mode shortcut registration failed');
+    } else {
+        console.log('Emoji mode shortcut registered successfully');
+    }
+
+    if (!adminPanelShortcut) {
+        console.log('Admin panel shortcut registration failed');
+    } else {
+        console.log('Admin panel shortcut registered successfully');
     }
 
     if (!escapeShortcut) {
@@ -173,6 +220,30 @@ function createWindow() {
       console.log('🖱️ IPC: Disabling mouse events');
       mainWindow.setIgnoreMouseEvents(true, { forward: true });
       console.log('✅ Mouse events disabled via IPC');
+    }
+  });
+
+  ipcMain.on('toggle-emoji-mode', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('toggle-emoji-mode');
+    }
+  });
+
+  ipcMain.on('set-emoji-opacity', (event, opacity) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('set-emoji-opacity', opacity);
+    }
+  });
+
+  ipcMain.on('set-emoji-size', (event, size) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('set-emoji-size', size);
+    }
+  });
+
+  ipcMain.on('set-emoji-lifetime', (event, lifetime) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('set-emoji-lifetime', lifetime);
     }
   });
 
@@ -207,4 +278,4 @@ app.on('activate', () => {
 // Clean up global shortcuts when app quits
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
-}); 
+});

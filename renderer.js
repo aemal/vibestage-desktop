@@ -255,7 +255,47 @@ try {
         document.head.appendChild(style);
     }
 
+    // Emoji display settings
+    let emojiDisplayMode = 'random'; // 'random' or 'calm'
+    let emojiOpacity = 1;
+    let emojiSize = 120;
+    let emojiLifetime = 5000;
+    let emojiEventsPerSecond = 0;
+
+    setInterval(() => {
+        if (emojiEventsPerSecond > 50) {
+            emojiLifetime = 1000;
+        } else if (emojiEventsPerSecond > 20) {
+            emojiLifetime = 2000;
+        } else {
+            emojiLifetime = 5000;
+        }
+        emojiEventsPerSecond = 0;
+    }, 1000);
+
+    ipcRenderer.on('toggle-emoji-mode', () => {
+        emojiDisplayMode = emojiDisplayMode === 'random' ? 'calm' : 'random';
+        console.log(`Emoji display mode changed to: ${emojiDisplayMode}`);
+    });
+
+    ipcRenderer.on('set-emoji-opacity', (event, opacity) => {
+        emojiOpacity = opacity / 100;
+        console.log(`Emoji opacity changed to: ${emojiOpacity}`);
+    });
+
+    ipcRenderer.on('set-emoji-size', (event, size) => {
+        emojiSize = size;
+        console.log(`Emoji size changed to: ${emojiSize}`);
+    });
+
+    ipcRenderer.on('set-emoji-lifetime', (event, lifetime) => {
+        emojiLifetime = lifetime * 1000;
+        console.log(`Emoji lifetime changed to: ${emojiLifetime}`);
+    });
+
+
     function handleEmojiEvent(val, key) {
+        emojiEventsPerSecond++;
         console.log('🎨 === handleEmojiEvent called ===');
         console.log('🎨 val:', val);
         console.log('🎨 key:', key);
@@ -432,9 +472,15 @@ try {
 
         const emojiElem = document.createElement('div');
         emojiElem.style.position = 'absolute';
-        emojiElem.style.left = `${position.x}px`;
-        emojiElem.style.top = `${position.y}px`;
-        emojiElem.style.fontSize = '120px';
+        if (emojiDisplayMode === 'random') {
+            emojiElem.style.left = `${position.x}px`;
+            emojiElem.style.top = `${position.y}px`;
+            emojiElem.style.fontSize = `${emojiSize}px`;
+        } else {
+            emojiElem.style.position = 'relative';
+            emojiElem.style.fontSize = `${emojiSize / 2}px`;
+            emojiElem.style.marginBottom = '10px';
+        }
         emojiElem.style.fontFamily = `"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
         emojiElem.style.lineHeight = '1';
         emojiElem.style.display = 'block';
@@ -449,8 +495,8 @@ try {
         emojiElem.style.touchAction = 'manipulation';
         emojiElem.style.webkitUserSelect = 'none';
         emojiElem.style.webkitTouchCallout = 'none';
-        emojiElem.style.opacity = '1';
-        emojiElem.style.transition = 'opacity 1s';
+        emojiElem.style.opacity = emojiOpacity;
+        emojiElem.style.transition = `opacity ${emojiLifetime / 1000}s`;
         emojiElem.style.zIndex = '1000'; // Lower z-index to ensure click-through
 
         // CRITICAL: Track this emoji instance to prevent duplicates
@@ -471,7 +517,13 @@ try {
         } else {
             emojiElem.textContent = val.emoji;
         }
-        emojiContainer.appendChild(emojiElem);
+        
+        if (emojiDisplayMode === 'random') {
+            emojiContainer.appendChild(emojiElem);
+        } else {
+            const calmContainer = document.getElementById('calm-mode-container');
+            calmContainer.appendChild(emojiElem);
+        }
 
 
         console.log('Emoji element created and added:', val.emoji);
@@ -498,8 +550,8 @@ try {
                     activeEmojiInstances.delete(key); // Clean up instance tracking
                     console.log('🧹 Cleaned up emoji:', key);
                 }
-            }, 1000); // match transition duration
-        }, 5000);
+            }, emojiLifetime); // match transition duration
+        }, emojiLifetime);
     }
 
     let emojiListenerActive = false; // Guard to prevent multiple listeners

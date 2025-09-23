@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VibeStage Admin</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .control-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>VibeStage Admin Controls</h1>
+    <div class="control-group">
+        <label for="mode-toggle">Emoji Display Mode:</label>
+        <button id="mode-toggle">Toggle Mode</button>
+    </div>
+
+    <div class="control-group">
+        <label for="opacity-slider">Opacity:</label>
+        <input type="range" id="opacity-slider" min="0" max="100" value="100">
+    </div>
+
+    <div class="control-group">
+        <label for="size-slider">Size:</label>
+        <input type="range" id="size-slider" min="20" max="200" value="120">
+    </div>
+
+    <div class="control-group">
+        <label for="lifetime-slider">Lifetime (seconds):</label>
+        <input type="range" id="lifetime-slider" min="1" max="10" value="5">
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        document.getElementById('mode-toggle').addEventListener('click', () => {
+            ipcRenderer.send('toggle-emoji-mode');
+        });
+
+        document.getElementById('opacity-slider').addEventListener('input', (event) => {
+            ipcRenderer.send('set-emoji-opacity', event.target.value);
+        });
+
+        document.getElementById('size-slider').addEventListener('input', (event) => {
+            ipcRenderer.send('set-emoji-size', event.target.value);
+        });
+
+        document.getElementById('lifetime-slider').addEventListener('input', (event) => {
+            ipcRenderer.send('set-emoji-lifetime', event.target.value);
+        });
+    </script>
+</body>
+</html>
