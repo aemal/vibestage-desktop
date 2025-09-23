@@ -39,6 +39,23 @@ try {
         if (typeof process !== 'undefined' && process.stdout) process.stdout.write(msg);
     });
 
+    // On app start, reset workshop pace to zero
+    set(ref(rtdb, 'workshopSpeed'), {
+        'too-slow': 0,
+        'just-right': 0,
+        'too-fast': 0,
+        lastUpdated: Date.now()
+    }).then(() => {
+        const msg = 'Workshop pace reset to zero on app start\n';
+        console.log(msg);
+        if (typeof process !== 'undefined' && process.stdout) process.stdout.write(msg);
+    }).catch(error => {
+        console.error('Error resetting workshop pace:', error);
+        if (typeof process !== 'undefined' && process.stdout) {
+            process.stdout.write('Error resetting workshop pace: ' + error.message + '\n');
+        }
+    });
+
     // Minimal test read from emojiEvents
     const testRef = ref(rtdb, 'emojiEvents');
     get(testRef).then(snapshot => {

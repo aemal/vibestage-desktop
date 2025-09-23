@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "node server.js & electron .",
     "server": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "rebuild": "cd native-modules/macos-window && npm run build"

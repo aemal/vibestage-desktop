@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>VibeStage Remote Controller</title>
     <style>
         * {
@@ -20,6 +20,11 @@
             display: flex;              /* center horizontally */
             justify-content: center;    /* center container */
             align-items: flex-start;    /* keep content starting from top */
+        }
+
+        html, body {
+            touch-action: manipulation;
+            -webkit-text-size-adjust: 100%;
         }
 
         .container {
@@ -92,6 +97,7 @@
             font-weight: 600;
             color: #333;
             min-width: 90px;
+            touch-action: manipulation;
         }
 
         .speed-button:hover {
@@ -144,6 +150,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            touch-action: manipulation;
         }
 
         .emoji-button:hover {
@@ -185,7 +192,7 @@
             padding: 12px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
-            font-size: 1em;
+            font-size: 16px; /* prevent iOS focus zoom */
             font-family: inherit;
             transition: border-color 0.3s ease;
         }
@@ -211,6 +218,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             width: 100%;
+            touch-action: manipulation;
         }
 
         .submit-btn:hover {
@@ -242,6 +250,7 @@
             font-weight: 600;
             transition: all 0.3s ease;
             border: 2px solid;
+            touch-action: manipulation;
         }
 
         .linkedin-btn {
@@ -274,6 +283,7 @@
             color: #ddd;
             cursor: pointer;
             transition: color 0.2s ease;
+            touch-action: manipulation;
         }
 
         .star:hover,
