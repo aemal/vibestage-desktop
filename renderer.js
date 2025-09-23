@@ -446,6 +446,9 @@ try {
         emojiElem.style.textRendering = 'optimizeQuality';
         emojiElem.style.userSelect = 'none';
         emojiElem.style.pointerEvents = 'none'; // Allow clicks to pass through
+        emojiElem.style.touchAction = 'manipulation';
+        emojiElem.style.webkitUserSelect = 'none';
+        emojiElem.style.webkitTouchCallout = 'none';
         emojiElem.style.opacity = '1';
         emojiElem.style.transition = 'opacity 1s';
         emojiElem.style.zIndex = '1000'; // Lower z-index to ensure click-through
@@ -863,7 +866,7 @@ try {
         modalContent.style.cssText = `
             background: white;
             border-radius: 12px;
-            padding: 24px;
+            padding: 16px;
             max-width: 80vw;
             max-height: 80vh;
             overflow-y: auto;
@@ -875,9 +878,9 @@ try {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 16px;
+            padding-bottom: 10px;
         `;
 
         // Workshop speed feedback section
@@ -885,17 +888,17 @@ try {
         speedFeedback.style.cssText = `
             background: #f8f9fa;
             border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
         `;
 
         const speedTitle = document.createElement('h3');
         speedTitle.textContent = 'Workshop Speed Feedback';
         speedTitle.style.cssText = `
-            margin: 0 0 15px 0;
+            margin: 0 0 6px 0;
             color: #333;
-            font-size: 1.2em;
+            font-size: 1em;
             font-weight: 600;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         `;
@@ -906,26 +909,26 @@ try {
             display: flex;
             justify-content: space-around;
             text-align: center;
-            gap: 15px;
+            gap: 10px;
         `;
 
         // Create speed stat elements
         const tooSlowStat = document.createElement('div');
         tooSlowStat.innerHTML = `
-            <div style="font-size: 1.8em; font-weight: bold; color: #dc3545; margin-bottom: 5px;" id="too-slow-count">0</div>
-            <div style="font-size: 0.9em; color: #666;">Too Slow</div>
+            <div style="font-size: 1em; font-weight: bold; color: #dc3545; margin-bottom: 1px;" id="too-slow-count">0</div>
+            <div style="font-size: 0.7em; color: #666;">Too Slow</div>
         `;
 
         const justRightStat = document.createElement('div');
         justRightStat.innerHTML = `
-            <div style="font-size: 1.8em; font-weight: bold; color: #28a745; margin-bottom: 5px;" id="just-right-count">0</div>
-            <div style="font-size: 0.9em; color: #666;">Just Right</div>
+            <div style="font-size: 1em; font-weight: bold; color: #28a745; margin-bottom: 1px;" id="just-right-count">0</div>
+            <div style="font-size: 0.7em; color: #666;">Just Right</div>
         `;
 
         const tooFastStat = document.createElement('div');
         tooFastStat.innerHTML = `
-            <div style="font-size: 1.8em; font-weight: bold; color: #ffc107; margin-bottom: 5px;" id="too-fast-count">0</div>
-            <div style="font-size: 0.9em; color: #666;">Too Fast</div>
+            <div style="font-size: 1em; font-weight: bold; color: #ffc107; margin-bottom: 1px;" id="too-fast-count">0</div>
+            <div style="font-size: 0.7em; color: #666;">Too Fast</div>
         `;
 
         speedStats.appendChild(tooSlowStat);
@@ -938,7 +941,7 @@ try {
         const title = document.createElement('h2');
         title.textContent = 'Questions';
         title.style.cssText = `
-            margin: 0;
+            margin: 0 0 0 20px;
             color: #333;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         `;
@@ -959,7 +962,9 @@ try {
                 text-align: center;
                 color: #666;
                 font-style: italic;
-                padding: 40px;
+                padding: 15px;
+                margin: 0;
+                font-size: 0.9em;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             `;
             questionsList.appendChild(noQuestions);
