@@ -90,6 +90,24 @@ function createWindow() {
 
   win.loadFile('index.html');
 
+  // Disable default DevTools shortcuts
+  win.webContents.on('before-input-event', (event, input) => {
+    // Block Cmd+Shift+I and Cmd+Option+I (DevTools shortcuts)
+    if (input.control || input.meta) {
+      if ((input.shift && input.key.toLowerCase() === 'i') ||
+          (input.alt && input.key.toLowerCase() === 'i') ||
+          (input.key === 'F12')) {
+        event.preventDefault();
+        console.log('Blocked DevTools shortcut:', input.key, 'modifiers:', {
+          shift: input.shift,
+          alt: input.alt,
+          control: input.control,
+          meta: input.meta
+        });
+      }
+    }
+  });
+
   // Register global shortcuts and IPC handlers
   win.webContents.once('did-finish-load', () => {
     console.log('Registering global shortcuts...');
@@ -119,13 +137,8 @@ function createWindow() {
     // });
     const escapeShortcut = null; // Disabled to prevent conflicts
 
-    // Register dev tools shortcut
-    const devToolsShortcut = globalShortcut.register('CommandOrControl+Option+I', () => {
-      console.log('Dev tools shortcut triggered');
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.toggleDevTools();
-      }
-    });
+    // DevTools disabled via webPreferences
+    const devToolsShortcut = null;
 
     if (!questionsShortcut) {
       console.log('Questions shortcut registration failed');

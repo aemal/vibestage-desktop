@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>VibeStage Remote Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            color: #333;
+            display: flex;              /* center horizontally */
+            justify-content: center;    /* center container */
+            align-items: flex-start;    /* keep content starting from top */
+        }
+
+        html, body {
+            touch-action: manipulation;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1em;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        
+
+        /* Workshop Speed Styles */
+        .speed-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .speed-button {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 12px 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #333;
+            min-width: 90px;
+            touch-action: manipulation;
+        }
+
+        .speed-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .speed-button.selected { transform: scale(1.05); }
+        .speed-button.too-slow { border-color: #dc3545; }
+        .speed-button.too-slow.selected { background: #dc3545; color: white; }
+        .speed-button.just-right { border-color: #28a745; }
+        .speed-button.just-right.selected { background: #28a745; color: white; }
+        .speed-button.too-fast { border-color: #ffc107; }
+        .speed-button.too-fast.selected { background: #ffc107; color: #333; }
+
+        .feedback-stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .stat { text-align: center; }
+        .stat-value { font-size: 1.4em; font-weight: bold; margin-bottom: 3px; }
+        .stat-label { font-size: 0.75em; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .too-slow .stat-value { color: #dc3545; }
+        .just-right .stat-value { color: #28a745; }
+        .too-fast .stat-value { color: #ffc107; }
+
+        /* Emoji Grid Styles */
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(55px, 1fr));
+            gap: 10px;
+        }
+
+        .emoji-button {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.8em;
+            line-height: 1;
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .emoji-button:hover {
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            border-color: #007bff;
+        }
+
+        .emoji-button.sending {
+            animation: sendPulse 0.5s ease-out;
+            background: #28a745;
+            border-color: #28a745;
+        }
+
+        @keyframes sendPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* Question Form Styles */
+        .question-form {
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px; /* prevent iOS focus zoom */
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .submit-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            touch-action: manipulation;
+        }
+
+        .submit-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Connect Section Styles */
+        .connect-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .connect-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid;
+            touch-action: manipulation;
+        }
+
+        .linkedin-btn {
+            background: #0077b5;
+            color: white;
+            border-color: #0077b5;
+        }
+
+        .youtube-btn {
+            background: #ff0000;
+            color: white;
+            border-color: #ff0000;
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Star Rating Styles */
+        .star-rating {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 15px 0;
+        }
+
+        .star {
+            font-size: 2em;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            touch-action: manipulation;
+        }
+
+        .star:hover,
+        .star.active {
+            color: #ffc107;
+        }
+
+        .feedback-form {
+            text-align: left;
+        }
+
+        .status-message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+                margin: 10px;
+            }
+
+            h1 { font-size: 1.8em; }
+
+            .speed-options {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .speed-button {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .connect-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .connect-btn {
+                width: 100%;
+                max-width: 250px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+
+    <div class="container">
+        <div class="header">
+            <h1>VibeStage Remote</h1>
+            <p class="subtitle">Workshop Control & Audience Engagement</p>
+        </div>
+
+        <!-- Workshop Speed Control Section -->
+        <div class="section">
+            <h3 class="section-title">📊 Workshop Pace</h3>
+            <p style="margin-bottom: 15px; color: #666; font-size: 0.9em;">How do you feel about the current workshop speed?</p>
+            <div class="speed-options">
+                <button class="speed-button too-slow" data-speed="too-slow">
+                    🐌 Too Slow
+                </button>
+                <button class="speed-button just-right" data-speed="just-right">
+                    ✅ Just Right
+                </button>
+                <button class="speed-button too-fast" data-speed="too-fast">
+                    🚀 Too Fast
+                </button>
+            </div>
+            <div class="feedback-stats">
+                <div class="stat too-slow">
+                    <div class="stat-value" id="tooSlowCount">0</div>
+                    <div class="stat-label">Slow</div>
+                </div>
+                <div class="stat just-right">
+                    <div class="stat-value" id="justRightCount">0</div>
+                    <div class="stat-label">Right</div>
+                </div>
+                <div class="stat too-fast">
+                    <div class="stat-value" id="tooFastCount">0</div>
+                    <div class="stat-label">Fast</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emoji Reactions Section -->
+        <div class="section">
+            <h3 class="section-title">😄 Send Reactions</h3>
+            <p style="margin-bottom: 15px; color: #666; font-size: 0.9em;">Express your emotions and reactions!</p>
+            <div class="emoji-grid">
+                <button class="emoji-button" data-emoji="🤗">🤗</button>
+                <button class="emoji-button" data-emoji="🔥">🔥</button>
+                <button class="emoji-button" data-emoji="❤️">❤️</button>
+                <button class="emoji-button" data-emoji="🎉">🎉</button>
+                <button class="emoji-button" data-emoji="🌟">🌟</button>
+                <button class="emoji-button" data-emoji="😄">😄</button>
+                <button class="emoji-button" data-emoji="🙏">🙏</button>
+                <button class="emoji-button" data-emoji="🤔">🤔</button>
+                <button class="emoji-button" data-emoji="🥱">🥱</button>
+                <button class="emoji-button" data-emoji="👏">👏</button>
+                <button class="emoji-button" data-emoji="👍">👍</button>
+                <button class="emoji-button" data-emoji="👎">👎</button>
+                <button class="emoji-button" data-emoji="😊">😊</button>
+                <button class="emoji-button" data-emoji="😂">😂</button>
+                <button class="emoji-button" data-emoji="😍">😍</button>
+                <button class="emoji-button" data-emoji="🤯">🤯</button>
+                <button class="emoji-button" data-emoji="⭐">⭐</button>
+                <button class="emoji-button" data-emoji="🚀">🚀</button>
+                <button class="emoji-button" data-emoji="🤩">🤩</button>
+                <button class="emoji-button" data-emoji="💡">💡</button>
+            </div>
+        </div>
+
+        <!-- Ask Question Section -->
+        <div class="section">
+            <h3 class="section-title">❓ Ask a Question</h3>
+            <p style="margin-bottom: 15px; color: #666; font-size: 0.9em;">Have a question? Ask Aemal directly!</p>
+            <div class="question-form">
+                <div class="form-group">
+                    <label class="form-label">Your Question</label>
+                    <textarea class="form-textarea" id="questionText" placeholder="Type your question here..." required></textarea>
+                </div>
+                <button class="submit-btn" id="submitQuestion">Submit Question</button>
+                <div id="questionStatus" class="status-message" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Connect with Aemal Section -->
+        <div class="section">
+            <h3 class="section-title">🤝 Connect with Aemal</h3>
+            <p style="margin-bottom: 15px; color: #666; font-size: 0.9em;">Stay connected and get more valuable content!</p>
+            <div class="connect-buttons">
+                <a href="https://linkedin.com/in/aemal" target="_blank" class="connect-btn linkedin-btn">
+                    <span>💼</span>
+                    Connect on LinkedIn
+                </a>
+                <a href="https://youtube.com/@AgentGeeks" target="_blank" class="connect-btn youtube-btn">
+                    <span>📺</span>
+                    Subscribe on YouTube
+                </a>
+            </div>
+        </div>
+
+        <!-- Provide Feedback Section -->
+        <div class="section">
+            <h3 class="section-title">⭐ Provide Feedback</h3>
+            <p style="margin-bottom: 15px; color: #666; font-size: 0.9em;">Help us improve! Your feedback is valuable.</p>
+            <div class="feedback-form">
+                <div class="form-group">
+                    <label class="form-label">Rate your experience</label>
+                    <div class="star-rating" id="starRating">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                    <p style="text-align: center; font-size: 0.85em; color: #666; margin-top: 5px;">
+                        <span id="ratingText">Click to rate</span>
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Your Feedback</label>
+                    <textarea class="form-textarea" id="feedbackText" placeholder="Share your thoughts, suggestions, or comments..." required></textarea>
+                </div>
+                <button class="submit-btn" id="submitFeedback">Submit Feedback</button>
+                <div id="feedbackStatus" class="status-message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK and JavaScript -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+        import { getDatabase, ref, set, onValue, get } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js';
+        import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZvlz3uUec58kSZp9BajzkjzJBsh8b4Es",
+            authDomain: "vibestage-d76c5.firebaseapp.com",
+            databaseURL: "https://vibestage-d76c5-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "vibestage-d76c5",
+            storageBucket: "vibestage-d76c5.firebasestorage.app",
+            messagingSenderId: "749848512177",
+            appId: "1:749848512177:web:1ea2df06bdeb1456a04490",
+            measurementId: "G-K6S4E7036J"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const firestore = getFirestore(app);
+
+        // State
+        let userSelection = null;
+        let feedbackCounts = { 'too-slow': 0, 'just-right': 0, 'too-fast': 0 };
+        let selectedRating = 0;
+
+        // Get or create persistent user ID
+        function getPersistentUserId() {
+            const storageKey = 'vibestage_user_id';
+            let userId = localStorage.getItem(storageKey);
+
+            if (!userId) {
+                userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem(storageKey, userId);
+                console.log('Generated new persistent user ID:', userId);
+            } else {
+                console.log('Using existing persistent user ID:', userId);
+            }
+
+            return userId;
+        }
+
+        const userId = getPersistentUserId();
+
+        // UUID generator function
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // Speed emoji mapping
+        const speedEmojis = {
+            'too-slow': '🐌',
+            'just-right': '✅',
+            'too-fast': '⚡'
+        };
+
+        // Browser info collection
+        function getBrowserInfo() {
+            return {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                languages: navigator.languages,
+                platform: navigator.platform,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                colorDepth: screen.colorDepth,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        // Get approximate location (country) info
+        async function getLocationInfo() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                return {
+                    country: data.country_name || 'Unknown',
+                    countryCode: data.country_code || 'Unknown',
+                    city: data.city || 'Unknown',
+                    region: data.region || 'Unknown',
+                    ip: data.ip || 'Unknown'
+                };
+            } catch (error) {
+                console.error('Error getting location:', error);
+                return {
+                    country: 'Unknown',
+                    countryCode: 'Unknown',
+                    city: 'Unknown',
+                    region: 'Unknown',
+                    ip: 'Unknown'
+                };
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) { /* badge removed */ }
+
+        // Send emoji to Firebase
+        async function sendEmoji(emoji, source = 'remote') {
+            try {
+                const timestamp = Date.now();
+                const emojiEventRef = ref(database, 'emojiEvents/' + timestamp);
+
+                await set(emojiEventRef, {
+                    emoji: emoji,
+                    position: null,
+                    timestamp: timestamp,
+                    source: source,
+                    userId: userId
+                });
+
+                console.log('Emoji sent:', emoji);
+                return true;
+            } catch (error) {
+                console.error('Error sending emoji:', error);
+                return false;
+            }
+        }
+
+        // Handle emoji button clicks
+        async function handleEmojiClick(button, emoji) {
+            // Debounce immediately to prevent rapid double clicks from sending twice
+            if (button.dataset.locked === 'true') {
+                return;
+            }
+            button.dataset.locked = 'true';
+            button.classList.add('sending');
+            button.disabled = true;
+
+            try {
+                await sendEmoji(emoji);
+            } catch (e) {
+                console.error('sendEmoji error:', e);
+            } finally {
+                // brief cooldown so fast double taps don't re-trigger
+                setTimeout(() => {
+                    button.dataset.locked = 'false';
+                    button.classList.remove('sending');
+                    button.disabled = false;
+                }, 600);
+            }
+        }
+
+        // Handle speed selection
+        let isProcessingSpeed = false;
+        async function handleSpeedSelection(speed) {
+            if (isProcessingSpeed) return;
+            isProcessingSpeed = true;
+
+            try {
+                if (userSelection) {
+                    feedbackCounts[userSelection] = Math.max(0, feedbackCounts[userSelection] - 1);
+                }
+
+                if (speed !== userSelection) {
+                    feedbackCounts[speed] = (feedbackCounts[speed] || 0) + 1;
+                    userSelection = speed;
+                    await sendEmoji(speedEmojis[speed], 'speed-feedback');
+                } else {
+                    userSelection = null;
+                }
+
+                const speedRef = ref(database, 'workshopSpeed');
+                await set(speedRef, {
+                    ...feedbackCounts,
+                    lastUpdated: Date.now()
+                });
+
+                updateSpeedButtons();
+                updateFeedbackDisplay(feedbackCounts);
+            } catch (error) {
+                console.error('Error updating speed feedback:', error);
+            } finally {
+                isProcessingSpeed = false;
+            }
+        }
+
+        // Handle question submission
+        async function handleQuestionSubmit() {
+            const textInput = document.getElementById('questionText');
+            const submitBtn = document.getElementById('submitQuestion');
+            const statusDiv = document.getElementById('questionStatus');
+
+            const questionText = textInput.value.trim();
+            if (!questionText) {
+                showStatus(statusDiv, 'Please enter a question.', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                await addDoc(collection(firestore, 'questions'), {
+                    text: questionText,
+                    name: 'Anonymous',
+                    timestamp: serverTimestamp(),
+                    source: 'remote-controller',
+                    userId: userId
+                });
+
+                showStatus(statusDiv, 'Question submitted successfully!', 'success');
+                textInput.value = '';
+            } catch (error) {
+                console.error('Error submitting question:', error);
+                showStatus(statusDiv, 'Error submitting question. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Question';
+            }
+        }
+
+        // Handle feedback submission
+        async function handleFeedbackSubmit() {
+            const feedbackText = document.getElementById('feedbackText').value.trim();
+            const submitBtn = document.getElementById('submitFeedback');
+            const statusDiv = document.getElementById('feedbackStatus');
+
+            if (selectedRating === 0) {
+                showStatus(statusDiv, 'Please select a rating.', 'error');
+                return;
+            }
+
+            if (!feedbackText) {
+                showStatus(statusDiv, 'Please enter your feedback.', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                const browserInfo = getBrowserInfo();
+                let locationInfo;
+
+                try {
+                    locationInfo = await getLocationInfo();
+                } catch (locationError) {
+                    console.warn('Failed to get location info, using fallback:', locationError);
+                    locationInfo = {
+                        country: 'Unknown',
+                        countryCode: 'Unknown',
+                        city: 'Unknown',
+                        region: 'Unknown',
+                        ip: 'Unknown'
+                    };
+                }
+
+                const feedbackData = {
+                    id: generateUUID(),
+                    rating: selectedRating,
+                    feedback: feedbackText,
+                    userId: userId,
+                    browserInfo: browserInfo,
+                    locationInfo: locationInfo,
+                    timestamp: new Date().toISOString()
+                };
+
+                console.log('Generated feedback UUID:', feedbackData.id);
+                console.log('Sending feedback to n8n webhook:', feedbackData);
+
+                // Send to n8n webhook
+                const response = await fetch('https://aemal.app.n8n.cloud/webhook/a6fafae3-7312-41de-b93e-59ad958cbfcc', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(feedbackData)
+                });
+
+                console.log('Webhook response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`Webhook failed with status: ${response.status}`);
+                }
+
+                showStatus(statusDiv, 'Feedback submitted successfully! Thank you!', 'success');
+
+                // Reset form
+                document.getElementById('feedbackText').value = '';
+                selectedRating = 0;
+                updateStarRating();
+
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                console.error('Error details:', error.message);
+                showStatus(statusDiv, `Error submitting feedback: ${error.message}. Please try again.`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Feedback';
+            }
+        }
+
+        // Update speed button states
+        function updateSpeedButtons() {
+            document.querySelectorAll('.speed-button').forEach(button => {
+                const speed = button.dataset.speed;
+                button.classList.toggle('selected', speed === userSelection);
+            });
+        }
+
+        // Update feedback display
+        function updateFeedbackDisplay(data) {
+            document.getElementById('tooSlowCount').textContent = data['too-slow'] || 0;
+            document.getElementById('justRightCount').textContent = data['just-right'] || 0;
+            document.getElementById('tooFastCount').textContent = data['too-fast'] || 0;
+        }
+
+        // Update star rating display
+        function updateStarRating() {
+            const stars = document.querySelectorAll('.star');
+            const ratingText = document.getElementById('ratingText');
+
+            stars.forEach((star, index) => {
+                star.classList.toggle('active', index < selectedRating);
+            });
+
+            const ratingLabels = ['Click to rate', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+            ratingText.textContent = ratingLabels[selectedRating];
+        }
+
+        // Show status message
+        function showStatus(element, message, type) {
+            element.textContent = message;
+            element.className = `status-message ${type}`;
+            element.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize Firebase
+        async function initializeFirebase() {
+            try {
+                // connection badge removed; keep logic no-op
+
+                const speedFeedbackRef = ref(database, 'workshopSpeed');
+                onValue(speedFeedbackRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        feedbackCounts = {
+                            'too-slow': data['too-slow'] || 0,
+                            'just-right': data['just-right'] || 0,
+                            'too-fast': data['too-fast'] || 0
+                        };
+                        updateFeedbackDisplay(feedbackCounts);
+                    }
+                });
+
+                const speedSnapshot = await get(ref(database, 'workshopSpeed'));
+                if (!speedSnapshot.exists()) {
+                    await set(ref(database, 'workshopSpeed'), {
+                        'too-slow': 0,
+                        'just-right': 0,
+                        'too-fast': 0,
+                        lastUpdated: Date.now()
+                    });
+                }
+
+                console.log('Firebase initialized');
+            } catch (error) {
+                console.error('Firebase error:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Setup event listeners
+        let listenersInitialized = false;
+        document.addEventListener('DOMContentLoaded', function() {
+            if (listenersInitialized) return;
+            listenersInitialized = true;
+
+            // Emoji buttons
+            document.querySelectorAll('.emoji-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const emoji = this.dataset.emoji;
+                    handleEmojiClick(this, emoji);
+                });
+            });
+
+            // Speed buttons
+            document.querySelectorAll('.speed-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const speed = this.dataset.speed;
+                    handleSpeedSelection(speed);
+                });
+            });
+
+            // Star rating
+            document.querySelectorAll('.star').forEach(star => {
+                star.addEventListener('click', function() {
+                    selectedRating = parseInt(this.dataset.rating);
+                    updateStarRating();
+                });
+            });
+
+            // Question submission
+            document.getElementById('submitQuestion').addEventListener('click', handleQuestionSubmit);
+
+            // Feedback submission
+            document.getElementById('submitFeedback').addEventListener('click', handleFeedbackSubmit);
+
+            // Initialize star rating display
+            updateStarRating();
+
+            // Initialize
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html>

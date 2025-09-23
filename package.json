@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "node server.js & electron .",
+    "server": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "rebuild": "cd native-modules/macos-window && npm run build"
   },
@@ -16,6 +17,7 @@
   },
   "dependencies": {
     "canvas-confetti": "^1.9.3",
+    "express": "^4.21.2",
     "firebase": "^11.8.1",
     "firebase-admin": "^13.4.0",
     "node-addon-api": "^7.0.0"

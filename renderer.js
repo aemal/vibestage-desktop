@@ -1,4 +1,5 @@
 try {
+    console.log('🚀 RENDERER.JS STARTING - TIMESTAMP:', Date.now());
     const fs = require('fs');
     const path = require('path');
     let config = { showEmojis: true };
@@ -38,6 +39,23 @@ try {
         if (typeof process !== 'undefined' && process.stdout) process.stdout.write(msg);
     });
 
+    // On app start, reset workshop pace to zero
+    set(ref(rtdb, 'workshopSpeed'), {
+        'too-slow': 0,
+        'just-right': 0,
+        'too-fast': 0,
+        lastUpdated: Date.now()
+    }).then(() => {
+        const msg = 'Workshop pace reset to zero on app start\n';
+        console.log(msg);
+        if (typeof process !== 'undefined' && process.stdout) process.stdout.write(msg);
+    }).catch(error => {
+        console.error('Error resetting workshop pace:', error);
+        if (typeof process !== 'undefined' && process.stdout) {
+            process.stdout.write('Error resetting workshop pace: ' + error.message + '\n');
+        }
+    });
+
     // Minimal test read from emojiEvents
     const testRef = ref(rtdb, 'emojiEvents');
     get(testRef).then(snapshot => {
@@ -59,8 +77,12 @@ try {
         console.error('Test read error:', error);
     });
 
-    // Note: Emojis are now handled through Firebase events, not this array
+    // DISABLE the old emoji element to prevent duplicate displays
     const emojiElement = document.getElementById('emoji');
+    if (emojiElement) {
+        emojiElement.style.display = 'none'; // Hide the old emoji system
+        console.log('🚫 Disabled old emoji element to prevent duplicates');
+    }
 
     // Rate limiting for emoji updates
     const RATE_LIMIT_MS = 1000; // 1 second between updates
@@ -149,11 +171,54 @@ try {
     // Initialize connection monitoring
     monitorConnection();
 
+    // Workshop speed feedback functionality
+    let workshopSpeedData = {
+        'too-slow': 0,
+        'just-right': 0,
+        'too-fast': 0
+    };
+
+    function initializeWorkshopSpeedListener() {
+        console.log('Setting up workshop speed listener...');
+        const speedRef = ref(rtdb, 'workshopSpeed');
+
+        onValue(speedRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                workshopSpeedData = {
+                    'too-slow': data['too-slow'] || 0,
+                    'just-right': data['just-right'] || 0,
+                    'too-fast': data['too-fast'] || 0
+                };
+
+                // Update the modal if it's open
+                updateWorkshopSpeedDisplay();
+
+                console.log('Workshop speed updated:', workshopSpeedData);
+            }
+        });
+    }
+
+    function updateWorkshopSpeedDisplay() {
+        const tooSlowElement = document.getElementById('too-slow-count');
+        const justRightElement = document.getElementById('just-right-count');
+        const tooFastElement = document.getElementById('too-fast-count');
+
+        if (tooSlowElement) tooSlowElement.textContent = workshopSpeedData['too-slow'];
+        if (justRightElement) justRightElement.textContent = workshopSpeedData['just-right'];
+        if (tooFastElement) tooFastElement.textContent = workshopSpeedData['too-fast'];
+    }
+
+    // Initialize workshop speed listener
+    initializeWorkshopSpeedListener();
+
     // Listen for emoji updates from Firebase
     // Replace 'currentEmoji' with the actual key/path used in your Realtime Database for the latest emoji
     const EMOJI_DB_PATH = 'emojiEvents';
 
     let initialized = false;
+    let processedEmojiKeys = new Set(); // Track processed emoji keys to prevent duplicates
+    let activeEmojiInstances = new Map(); // Track active emoji DOM elements to prevent duplicates
 
     // Global error handler
     if (typeof process !== 'undefined' && process.on) {
@@ -191,16 +256,26 @@ try {
     }
 
     function handleEmojiEvent(val, key) {
+        console.log('🎨 === handleEmojiEvent called ===');
+        console.log('🎨 val:', val);
+        console.log('🎨 key:', key);
+        console.log('🎨 Emoji received:', val.emoji);
+        console.log('🎨 config.showEmojis:', config.showEmojis);
+
+        // CRITICAL: Check if this emoji is already being displayed
+        if (activeEmojiInstances.has(key)) {
+            console.log('🚫 DUPLICATE PREVENTION: Emoji already exists for key:', key);
+            return;
+        }
+
         if (!config.showEmojis && val.source !== 'question') {
+            console.log('🚫 Emojis disabled for non-questions, removing:', key);
             if (key) {
                 remove(ref(rtdb, 'emojiEvents/' + key));
+                processedEmojiKeys.delete(key); // Clean up tracking
             }
             return;
         }
-        console.log('=== handleEmojiEvent called ===');
-        console.log('val:', val);
-        console.log('key:', key);
-        console.log('Emoji received:', val.emoji);
         console.log('Emoji char codes:', val.emoji ? Array.from(val.emoji).map(char => char.charCodeAt(0)) : 'no emoji');
         
         const emojiContainer = document.body;
@@ -352,6 +427,9 @@ try {
         }
         
         // Only render emoji element for non-party/star emojis
+        console.log('🎭 CREATING EMOJI ELEMENT FOR:', val.emoji, 'KEY:', key);
+
+
         const emojiElem = document.createElement('div');
         emojiElem.style.position = 'absolute';
         emojiElem.style.left = `${position.x}px`;
@@ -368,9 +446,15 @@ try {
         emojiElem.style.textRendering = 'optimizeQuality';
         emojiElem.style.userSelect = 'none';
         emojiElem.style.pointerEvents = 'none'; // Allow clicks to pass through
+        emojiElem.style.touchAction = 'manipulation';
+        emojiElem.style.webkitUserSelect = 'none';
+        emojiElem.style.webkitTouchCallout = 'none';
         emojiElem.style.opacity = '1';
         emojiElem.style.transition = 'opacity 1s';
         emojiElem.style.zIndex = '1000'; // Lower z-index to ensure click-through
+
+        // CRITICAL: Track this emoji instance to prevent duplicates
+        activeEmojiInstances.set(key, emojiElem);
         
         // Apply appropriate animation based on emoji type
         if (isQuestionEmoji) {
@@ -388,7 +472,8 @@ try {
             emojiElem.textContent = val.emoji;
         }
         emojiContainer.appendChild(emojiElem);
-        
+
+
         console.log('Emoji element created and added:', val.emoji);
         
         console.log('Not a 🎉 emoji, no confetti triggered');
@@ -406,16 +491,29 @@ try {
                 if (emojiElem.parentNode) {
                     emojiElem.parentNode.removeChild(emojiElem);
                 }
-                // Remove from database
+                // CRITICAL: Clean up all tracking when emoji is removed
                 if (key) {
                     remove(ref(rtdb, 'emojiEvents/' + key));
+                    processedEmojiKeys.delete(key); // Clean up tracking
+                    activeEmojiInstances.delete(key); // Clean up instance tracking
+                    console.log('🧹 Cleaned up emoji:', key);
                 }
             }, 1000); // match transition duration
         }, 5000);
     }
 
+    let emojiListenerActive = false; // Guard to prevent multiple listeners
+    let emojiListenerUnsubscribes = []; // Store unsubscribe functions
+
     function listenForEmojiEvents() {
-        console.log('Setting up Firebase listeners...');
+        if (emojiListenerActive) {
+            console.log('⚠️ Emoji listener already active, skipping setup');
+            return;
+        }
+
+        console.log('🔥 Setting up Firebase listeners...');
+
+        emojiListenerActive = true;
         const emojiRef = ref(rtdb, 'emojiEvents');
         
         // First, check if there are existing emojis and mark as initialized
@@ -428,29 +526,42 @@ try {
             }
         });
         
-        onChildAdded(emojiRef, (snapshot) => {
-            console.log('onChildAdded triggered');
+        // Use off() to clear any existing listeners first
+        const { off } = require('firebase/database');
+        off(emojiRef);
+        console.log('🧹 Cleared any existing listeners');
+
+        const unsubscribeAdded = onChildAdded(emojiRef, (snapshot) => {
+            console.log('🔥 onChildAdded triggered');
             const val = snapshot.val();
             const key = snapshot.key;
-            console.log('Child added - val:', val, 'key:', key, 'initialized:', initialized);
-            
+
+            console.log('🔥 Child added - val:', val, 'key:', key, 'initialized:', initialized);
+            console.log('🔥 Processed keys so far:', Array.from(processedEmojiKeys));
+
+            // Check if we've already processed this emoji
+            if (processedEmojiKeys.has(key)) {
+                console.log('⚠️ Emoji already processed, skipping:', key);
+                return;
+            }
+
             // Only skip if we found existing emojis during initialization
             if (!initialized) {
                 initialized = true;
-                console.log('First emoji received, setting initialized to true');
+                console.log('🔥 First emoji received, setting initialized to true');
             }
-            
-            // Always handle the emoji event
+
+            // Mark as processed and handle the emoji event
+            processedEmojiKeys.add(key);
+            console.log('✅ Processing emoji:', val.emoji, 'key:', key);
             handleEmojiEvent(val, key);
         });
-        
-        onChildChanged(emojiRef, (snapshot) => {
-            console.log('onChildChanged triggered');
-            const val = snapshot.val();
-            const key = snapshot.key;
-            console.log('Child changed - val:', val, 'key:', key);
-            handleEmojiEvent(val, key);
-        });
+
+        // Store unsubscribe functions
+        emojiListenerUnsubscribes.push(unsubscribeAdded);
+
+        // Remove onChildChanged completely since it's causing duplicates
+        console.log('🚫 Skipping onChildChanged to prevent duplicates');
     }
 
     // Questions functionality
@@ -755,7 +866,7 @@ try {
         modalContent.style.cssText = `
             background: white;
             border-radius: 12px;
-            padding: 24px;
+            padding: 16px;
             max-width: 80vw;
             max-height: 80vh;
             overflow-y: auto;
@@ -767,21 +878,75 @@ try {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 16px;
+            padding-bottom: 10px;
         `;
 
+        // Workshop speed feedback section
+        const speedFeedback = document.createElement('div');
+        speedFeedback.style.cssText = `
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+        `;
+
+        const speedTitle = document.createElement('h3');
+        speedTitle.textContent = 'Workshop Speed Feedback';
+        speedTitle.style.cssText = `
+            margin: 0 0 6px 0;
+            color: #333;
+            font-size: 1em;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
+
+        const speedStats = document.createElement('div');
+        speedStats.id = 'speed-stats';
+        speedStats.style.cssText = `
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            gap: 10px;
+        `;
+
+        // Create speed stat elements
+        const tooSlowStat = document.createElement('div');
+        tooSlowStat.innerHTML = `
+            <div style="font-size: 1em; font-weight: bold; color: #dc3545; margin-bottom: 1px;" id="too-slow-count">0</div>
+            <div style="font-size: 0.7em; color: #666;">Too Slow</div>
+        `;
+
+        const justRightStat = document.createElement('div');
+        justRightStat.innerHTML = `
+            <div style="font-size: 1em; font-weight: bold; color: #28a745; margin-bottom: 1px;" id="just-right-count">0</div>
+            <div style="font-size: 0.7em; color: #666;">Just Right</div>
+        `;
+
+        const tooFastStat = document.createElement('div');
+        tooFastStat.innerHTML = `
+            <div style="font-size: 1em; font-weight: bold; color: #ffc107; margin-bottom: 1px;" id="too-fast-count">0</div>
+            <div style="font-size: 0.7em; color: #666;">Too Fast</div>
+        `;
+
+        speedStats.appendChild(tooSlowStat);
+        speedStats.appendChild(justRightStat);
+        speedStats.appendChild(tooFastStat);
+
+        speedFeedback.appendChild(speedTitle);
+        speedFeedback.appendChild(speedStats);
+
         const title = document.createElement('h2');
-        title.textContent = 'Questions'; // Simple text without symbols
-        title.innerHTML = 'Questions'; // Force set both textContent and innerHTML
+        title.textContent = 'Questions';
         title.style.cssText = `
-            margin: 0;
+            margin: 0 0 0 20px;
             color: #333;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         `;
-        console.log('Title set to:', title.textContent);
 
+        header.appendChild(speedFeedback);
         header.appendChild(title);
 
         const questionsList = document.createElement('div');
@@ -797,7 +962,9 @@ try {
                 text-align: center;
                 color: #666;
                 font-style: italic;
-                padding: 40px;
+                padding: 15px;
+                margin: 0;
+                font-size: 0.9em;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             `;
             questionsList.appendChild(noQuestions);
@@ -1000,6 +1167,9 @@ try {
         modalContent.appendChild(questionsList);
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
+
+        // Update workshop speed display when modal is shown
+        updateWorkshopSpeedDisplay();
 
         // Ensure mouse events stay enabled
         setTimeout(() => {
