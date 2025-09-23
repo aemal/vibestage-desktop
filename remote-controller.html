@@ -442,11 +442,11 @@
                 <div class="form-group">
                     <label class="form-label">Rate your experience</label>
                     <div class="star-rating" id="starRating">
-                        <span class="star" data-rating="1">⭐</span>
-                        <span class="star" data-rating="2">⭐</span>
-                        <span class="star" data-rating="3">⭐</span>
-                        <span class="star" data-rating="4">⭐</span>
-                        <span class="star" data-rating="5">⭐</span>
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
                     </div>
                     <p style="text-align: center; font-size: 0.85em; color: #666; margin-top: 5px;">
                         <span id="ratingText">Click to rate</span>
@@ -454,11 +454,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Your Feedback</label>
-                    <textarea class="form-textarea" id="feedbackText" placeholder="Share your thoughts, suggestions, or comments..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email (Optional)</label>
-                    <input type="email" class="form-input" id="feedbackEmail" placeholder="your.email@example.com">
+                    <textarea class="form-textarea" id="feedbackText" placeholder="Share your thoughts, suggestions, or comments..." required></textarea>
                 </div>
                 <button class="submit-btn" id="submitFeedback">Submit Feedback</button>
                 <div id="feedbackStatus" class="status-message" style="display: none;"></div>
@@ -493,7 +489,33 @@
         let userSelection = null;
         let feedbackCounts = { 'too-slow': 0, 'just-right': 0, 'too-fast': 0 };
         let selectedRating = 0;
-        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+
+        // Get or create persistent user ID
+        function getPersistentUserId() {
+            const storageKey = 'vibestage_user_id';
+            let userId = localStorage.getItem(storageKey);
+
+            if (!userId) {
+                userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem(storageKey, userId);
+                console.log('Generated new persistent user ID:', userId);
+            } else {
+                console.log('Using existing persistent user ID:', userId);
+            }
+
+            return userId;
+        }
+
+        const userId = getPersistentUserId();
+
+        // UUID generator function
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
 
         // Speed emoji mapping
         const speedEmojis = {
@@ -664,7 +686,6 @@
         // Handle feedback submission
         async function handleFeedbackSubmit() {
             const feedbackText = document.getElementById('feedbackText').value.trim();
-            const feedbackEmail = document.getElementById('feedbackEmail').value.trim();
             const submitBtn = document.getElementById('submitFeedback');
             const statusDiv = document.getElementById('feedbackStatus');
 
@@ -683,45 +704,60 @@
 
             try {
                 const browserInfo = getBrowserInfo();
-                const locationInfo = await getLocationInfo();
+                let locationInfo;
+
+                try {
+                    locationInfo = await getLocationInfo();
+                } catch (locationError) {
+                    console.warn('Failed to get location info, using fallback:', locationError);
+                    locationInfo = {
+                        country: 'Unknown',
+                        countryCode: 'Unknown',
+                        city: 'Unknown',
+                        region: 'Unknown',
+                        ip: 'Unknown'
+                    };
+                }
 
                 const feedbackData = {
+                    id: generateUUID(),
                     rating: selectedRating,
                     feedback: feedbackText,
-                    email: feedbackEmail || null,
                     userId: userId,
                     browserInfo: browserInfo,
                     locationInfo: locationInfo,
                     timestamp: new Date().toISOString()
                 };
 
-                // Send to Firebase
-                await addDoc(collection(firestore, 'feedback'), feedbackData);
+                console.log('Generated feedback UUID:', feedbackData.id);
+                console.log('Sending feedback to n8n webhook:', feedbackData);
 
-                // Send to external endpoint
-                try {
-                    await fetch('https://abc.com/feedback', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(feedbackData)
-                    });
-                } catch (endpointError) {
-                    console.log('External endpoint not available:', endpointError);
+                // Send to n8n webhook
+                const response = await fetch('https://aemal.app.n8n.cloud/webhook/a6fafae3-7312-41de-b93e-59ad958cbfcc', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(feedbackData)
+                });
+
+                console.log('Webhook response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`Webhook failed with status: ${response.status}`);
                 }
 
                 showStatus(statusDiv, 'Feedback submitted successfully! Thank you!', 'success');
 
                 // Reset form
                 document.getElementById('feedbackText').value = '';
-                document.getElementById('feedbackEmail').value = '';
                 selectedRating = 0;
                 updateStarRating();
 
             } catch (error) {
                 console.error('Error submitting feedback:', error);
-                showStatus(statusDiv, 'Error submitting feedback. Please try again.', 'error');
+                console.error('Error details:', error.message);
+                showStatus(statusDiv, `Error submitting feedback: ${error.message}. Please try again.`, 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Feedback';
@@ -839,6 +875,9 @@
 
             // Feedback submission
             document.getElementById('submitFeedback').addEventListener('click', handleFeedbackSubmit);
+
+            // Initialize star rating display
+            updateStarRating();
 
             // Initialize
             initializeFirebase();
