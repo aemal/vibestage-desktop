@@ -219,6 +219,7 @@ try {
     let initialized = false;
     let processedEmojiKeys = new Set(); // Track processed emoji keys to prevent duplicates
     let activeEmojiInstances = new Map(); // Track active emoji DOM elements to prevent duplicates
+    let clusteredEmojis = new Map(); // Map to store clustered emoji elements and their counts
 
     // Global error handler
     if (typeof process !== 'undefined' && process.on) {
@@ -256,7 +257,7 @@ try {
     }
 
     // Emoji display settings
-    let emojiDisplayMode = 'random'; // 'random' or 'calm'
+    let emojiDisplayMode = 'random'; // 'random', 'calm', or 'bottom-right'
     let emojiOpacity = 1;
     let emojiSize = 120;
     let emojiLifetime = 5000;
@@ -274,7 +275,9 @@ try {
     }, 1000);
 
     ipcRenderer.on('toggle-emoji-mode', () => {
-        emojiDisplayMode = emojiDisplayMode === 'random' ? 'calm' : 'random';
+        const modes = ['random', 'calm', 'bottom-right'];
+        let currentIndex = modes.indexOf(emojiDisplayMode);
+        emojiDisplayMode = modes[(currentIndex + 1) % modes.length];
         console.log(`Emoji display mode changed to: ${emojiDisplayMode}`);
     });
 
@@ -331,6 +334,45 @@ try {
                 y: Math.floor(Math.random() * maxY)
             };
         }
+
+        function getRandomPositionInContainer(container, currentEmojiSize) {
+            const containerRect = container.getBoundingClientRect();
+            const emojiRenderedSize = currentEmojiSize; 
+
+            const maxX = containerRect.width - emojiRenderedSize;
+            const maxY = containerRect.height - emojiRenderedSize;
+
+            // Ensure positions are not negative
+            const randomX = maxX > 0 ? Math.floor(Math.random() * maxX) : 0;
+            const randomY = maxY > 0 ? Math.floor(Math.random() * maxY) : 0;
+
+            return {
+                x: randomX,
+                y: randomY
+            };
+        }
+
+        // Clustering logic
+        let existingClusteredEmoji = clusteredEmojis.get(val.emoji);
+        if (existingClusteredEmoji && existingClusteredEmoji.element.parentNode) {
+            // Update existing cluster
+            existingClusteredEmoji.count++;
+            existingClusteredEmoji.counterElement.textContent = `x${existingClusteredEmoji.count}`;
+            // Reset fade-out timer
+            clearTimeout(existingClusteredEmoji.fadeTimeout);
+            existingClusteredEmoji.element.style.opacity = emojiOpacity;
+            existingClusteredEmoji.fadeTimeout = setTimeout(() => {
+                existingClusteredEmoji.element.style.opacity = '0';
+                setTimeout(() => {
+                    if (existingClusteredEmoji.element.parentNode) {
+                        existingClusteredEmoji.element.parentNode.removeChild(existingClusteredEmoji.element);
+                    }
+                    clusteredEmojis.delete(val.emoji);
+                }, emojiLifetime);
+            }, emojiLifetime);
+            return; // Don't create a new element
+        }
+
         const position = val.position || getRandomPosition();
         // Create a new emoji element
         // Try multiple ways to detect party emoji (Unicode emojis)
@@ -471,17 +513,6 @@ try {
 
 
         const emojiElem = document.createElement('div');
-        emojiElem.style.position = 'absolute';
-        if (emojiDisplayMode === 'random') {
-            emojiElem.style.left = `${position.x}px`;
-            emojiElem.style.top = `${position.y}px`;
-            emojiElem.style.fontSize = `${emojiSize}px`;
-        } else {
-            emojiElem.style.position = 'relative';
-            emojiElem.style.fontSize = `${emojiSize / 2}px`;
-            emojiElem.style.marginBottom = '10px';
-        }
-        emojiElem.style.fontFamily = `"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
         emojiElem.style.lineHeight = '1';
         emojiElem.style.display = 'block';
         emojiElem.style.width = 'auto';
@@ -498,6 +529,15 @@ try {
         emojiElem.style.opacity = emojiOpacity;
         emojiElem.style.transition = `opacity ${emojiLifetime / 1000}s`;
         emojiElem.style.zIndex = '1000'; // Lower z-index to ensure click-through
+
+        const counterElement = document.createElement('span');
+        counterElement.className = 'emoji-counter';
+        counterElement.style.fontSize = '0.5em';
+        counterElement.style.verticalAlign = 'super';
+        counterElement.style.marginLeft = '0.1em';
+        counterElement.style.fontWeight = 'bold';
+        counterElement.style.color = 'white';
+        counterElement.textContent = 'x1';
 
         // CRITICAL: Track this emoji instance to prevent duplicates
         activeEmojiInstances.set(key, emojiElem);
@@ -517,12 +557,32 @@ try {
         } else {
             emojiElem.textContent = val.emoji;
         }
+
+        emojiElem.appendChild(counterElement);
+        clusteredEmojis.set(val.emoji, { element: emojiElem, counterElement: counterElement, count: 1, fadeTimeout: null });
+
         
         if (emojiDisplayMode === 'random') {
+            emojiElem.style.position = 'absolute';
+            emojiElem.style.left = `${position.x}px`;
+            emojiElem.style.top = `${position.y}px`;
+            emojiElem.style.fontSize = `${emojiSize}px`;
             emojiContainer.appendChild(emojiElem);
-        } else {
+        } else if (emojiDisplayMode === 'calm') {
+            emojiElem.style.position = 'relative';
+            emojiElem.style.fontSize = `${emojiSize / 2}px`;
+            emojiElem.style.marginBottom = '10px';
             const calmContainer = document.getElementById('calm-mode-container');
             calmContainer.appendChild(emojiElem);
+        } else if (emojiDisplayMode === 'bottom-right') {
+            const bottomRightContainer = document.getElementById('bottom-right-container');
+            const currentEmojiRenderedSize = emojiSize / 2; // Emojis in this mode are half size
+            const randomPos = getRandomPositionInContainer(bottomRightContainer, currentEmojiRenderedSize);
+            emojiElem.style.position = 'absolute';
+            emojiElem.style.left = `${randomPos.x}px`;
+            emojiElem.style.top = `${randomPos.y}px`;
+            emojiElem.style.fontSize = `${currentEmojiRenderedSize}px`;
+            bottomRightContainer.appendChild(emojiElem);
         }
 
 
@@ -536,7 +596,7 @@ try {
         console.log('Emoji char codes:', Array.from(val.emoji).map(char => char.charCodeAt(0)));
         
         // Fade out after 5 seconds
-        setTimeout(() => {
+        const currentFadeTimeout = setTimeout(() => {
             emojiElem.style.opacity = '0';
             // Remove from DOM after fade out
             setTimeout(() => {
@@ -548,10 +608,12 @@ try {
                     remove(ref(rtdb, 'emojiEvents/' + key));
                     processedEmojiKeys.delete(key); // Clean up tracking
                     activeEmojiInstances.delete(key); // Clean up instance tracking
+                    clusteredEmojis.delete(val.emoji);
                     console.log('🧹 Cleaned up emoji:', key);
                 }
-            }, emojiLifetime); // match transition duration
+            }, emojiLifetime);
         }, emojiLifetime);
+        clusteredEmojis.get(val.emoji).fadeTimeout = currentFadeTimeout;
     }
 
     let emojiListenerActive = false; // Guard to prevent multiple listeners
@@ -657,7 +719,8 @@ try {
             
             if (draggedIndex < targetIndex) {
                 questionsList.insertBefore(draggedElement, e.target.nextSibling);
-            } else {
+            }
+            else {
                 questionsList.insertBefore(draggedElement, e.target);
             }
             
@@ -802,7 +865,7 @@ try {
             setTimeout(() => {
                 appStartupComplete = true;
                 console.log('🚀 App startup complete - will now trigger emojis for new questions only');
-            }, 2000); // 2 second delay to ensure all startup questions are loaded
+            }, 2000);
             
         }).catch(error => {
             console.error('❌ Error connecting to Firestore:', error);
@@ -838,8 +901,6 @@ try {
                         } else {
                             if (deletingQuestionIds.has(questionData.id)) {
                                 console.log('🚫 Skipping emoji for question being deleted:', questionData.text || questionData.question);
-                            } else {
-                                console.log('📄 Startup question or already loaded (no emoji):', questionData.text || questionData.question);
                             }
                             // Just add to local data without emoji
                             const existingIndex = questionsData.findIndex(q => q.id === questionData.id);
@@ -1643,7 +1704,7 @@ try {
                 const emojiEventRef = ref(rtdb, 'emojiEvents/' + timestamp);
                 const emojiData = {
                     emoji: questionEmoji,
-                    position: null,
+                    position: null, // Will use random position
                     timestamp: timestamp,
                     source: 'test'
                 };
@@ -1696,4 +1757,4 @@ try {
 } catch (error) {
     console.error('ERROR IN RENDERER.JS:', error);
     alert('ERROR IN RENDERER.JS: ' + error.message);
-} 
+}
